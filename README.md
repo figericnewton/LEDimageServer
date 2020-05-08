@@ -29,6 +29,7 @@ Project structure:
 ```
 
 ## Project Hardware
+![Bread Board](https://i.imgur.com/fI3c1ja.png)
  - NodeMCU V2 (ESP8266 and CP2102 chips). This is my LED controller and server.
  - 18 150px WS2812B strips, cut in half and assembled as a 75px by 36px screen with data transmitted in a row-major alternating pattern
  - 4 channel logic level converter. Steps up the 3.3V outputs from ESP8266 to 5V on the three buses I use.
@@ -38,6 +39,8 @@ Project structure:
 
 ## Wiring Schematic
  FIXME: create and add a schematic.
+![LED wiring](https://i.imgur.com/WgRxYZS.png)
+![Board wiring](https://i.imgur.com/xizbI3t.png)
 
 ## Display Operation
 ### The display is operated at the high level as a state machine with 5 different modes:
