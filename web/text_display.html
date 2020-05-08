@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<title>LED Image Server</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<style>
+html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
+<!-- .textscroll { -->
+  <!-- -moz-animation: marquee 10s linear infinite; -->
+  <!-- -webkit-animation: marquee 10s linear infinite; -->
+  <!-- animation: marquee 10s linear infinite; -->
+<!-- } -->
+<!-- @-moz-keyframes marquee { -->
+  <!-- 0% { transform: translateX(100%); } -->
+  <!-- 100% { transform: translateX(-100%); } -->
+<!-- } -->
+<!-- @-webkit-keyframes marquee { -->
+  <!-- 0% { transform: translateX(100%); } -->
+  <!-- 100% { transform: translateX(-100%); } -->
+<!-- } -->
+<!-- @keyframes marquee { -->
+  <!-- 0% { -->
+    <!-- -moz-transform: translateX(100%); -->
+    <!-- -webkit-transform: translateX(100%); -->
+    <!-- transform: translateX(100%)  -->
+  <!-- } -->
+  <!-- 100% { -->
+    <!-- -moz-transform: translateX(-100%); -->
+    <!-- -webkit-transform: translateX(-100%); -->
+    <!-- transform: translateX(-100%); -->
+  <!-- } -->
+<!-- } -->
+.column {
+  flex: 20%;
+  oaddubg: 0;
+}
+.row {
+  display: flex;
+}
+</style>
+<body class="w3-light-grey">
+
+<!-- Top container -->
+<div class="w3-bar w3-top w3-black w3-large" style="z-index:4">
+  <button class="w3-bar-item w3-button w3-hide-large w3-hover-none w3-hover-text-light-grey" onclick="w3_open();"><i class="fa fa-bars"></i>  Navigation</button>
+  <span class="w3-bar-item w3-right">LED Server</span>
+</div>
+
+<!-- Sidebar/menu -->
+<nav class="w3-sidebar w3-collapse w3-white w3-animate-left" style="z-index:3;width:300px;" id="navBar"><br>
+  <div class="w3-bar-block">
+    <a href="#" class="w3-bar-item w3-button w3-padding-16 w3-hide-large w3-dark-grey w3-hover-black" onclick="w3_close()" title="close menu"><i class="fa fa-remove fa-fw"></i>  Close Menu</a>
+    <a href="/home" class="w3-bar-item w3-button w3-padding"> Home</a>
+    <a href="/home?command=off" class="w3-bar-item w3-button w3-padding"> Turn Display Off</a>
+    <a href="/text_display" class="w3-bar-item w3-button w3-padding w3-blue"> Display Text</a>
+    <a href="/select_image" class="w3-bar-item w3-button w3-padding"> Image Selection</a>
+    <a href="/upload_image" class="w3-bar-item w3-button w3-padding"> Upload Image</a>
+    <a href="/select_animation" class="w3-bar-item w3-button w3-padding"> Animation Selection</a>
+    <a href="/upload_animation" class="w3-bar-item w3-button w3-padding"> Upload Animation</a>
+    <a href="/stream_camera" class="w3-bar-item w3-button w3-padding"> Stream Camera</a><br><br>
+  </div>
+</nav>
+
+<!-- Overlay effect when opening sidebar on small screens -->
+<div class="w3-overlay w3-hide-large w3-animate-opacity" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="navBarOverlay"></div>
+
+<!-- !PAGE CONTENT! -->
+<div class="w3-main" style="margin-left:300px;margin-top:43px;">
+
+  <div class="w3-container">
+    <h2>Setup for Displaying Text on the Screen</h2>
+    <form name="txtInputForm" action="/home" method="post">
+      <input type="hidden" id="textInputSubmit" name="textInput" value="Error">
+      <input type="hidden" id="command" name="command" value="text">
+      <input type="checkbox" id="scrollText" name="scrollText" value="true">
+      <label for="scrollText"> Scroll text across screen?</label><br>
+    </form>
+    <input type="text" id="textInput" name="textInput" value="Enter text message here!">
+    <!-- <p contenteditable="true" class="w3-border w3-padding" id="textInput">Enter text message here!</p> -->
+    <button type="button" class="w3-button w3-theme" onclick="textPreview()">Preview</button>
+    <button type="button" class="w3-button w3-theme" onclick="textSubmit()">Submit</button>
+  </div>
+  
+  <div class="row w3-padding">
+    <div class="column">
+      <img id="prev0" src="/data/font/E.bmp" style="width:100%" alt="Preview of LED display">
+    </div>
+    <div class="column">
+      <img id="prev1" src="/data/font/N.bmp" style="width:100%" alt="Preview of LED display">
+    </div>
+    <div class="column">
+      <img id="prev2" src="/data/font/T.bmp" style="width:100%" alt="Preview of LED display">
+    </div>
+    <div class="column">
+      <img id="prev3" src="/data/font/E.bmp" style="width:100%" alt="Preview of LED display">
+    </div>
+    <div class="column">
+      <img id="prev4" src="/data/font/R.bmp" style="width:100%" alt="Preview of LED display">
+    </div>
+  </div>
+  
+  <!-- Footer -->
+  <footer class="w3-container w3-padding-16 w3-light-grey">
+    <p>Source code for this project is available on <a href="https://github.com/figericnewton/LEDimageServer" target="_blank">my github page</a>.</p>
+    <p>CSS template for webpage comes from <a href="https://www.w3schools.com/w3css/default.asp" target="_blank">w3.css</a></p>
+  </footer>
+
+  <!-- End page content -->
+</div>
+
+<script>
+// Get the Sidebar
+var navBar = document.getElementById("navBar");
+
+// Get the DIV with overlay effect
+var navBarOverlay = document.getElementById("navBarOverlay");
+
+// Toggle between showing and hiding the sidebar, and add overlay effect
+function w3_open() {
+  if (navBar.style.display == 'block') {
+    navBar.style.display = 'none';
+    navBarOverlay.style.display = "none";
+  } else {
+    navBar.style.display = 'block';
+    navBarOverlay.style.display = "block";
+  }
+}
+
+// Close the sidebar with the close button
+function w3_close() {
+  navBar.style.display = "none";
+  navBarOverlay.style.display = "none";
+}
+
+var scrollText = document.getElementById("scrollText");
+var textInput = document.getElementById("textInput");
+var textBeingPreviewed = document.getElementById("textBeingPreviewed");
+var textInputSubmit = document.getElementById("textInputSubmit");
+function textPreview() {
+  if (scrollText.checked) {
+    alert("Screen preview is not yet able to scroll text!");
+  }
+  cleanInput = getCleanInput(textInput.value);
+  for (var i = 0; i < 5; i++) {
+    document.getElementById("prev"+i).src = "/data/font/" + cleanInput.charAt(i) + ".bmp";
+  }
+}
+function textSubmit() {
+  textInputSubmit.value = getCleanInput(textInput.value);
+  document.txtInputForm.submit();
+}
+function getCleanInput(rawText) {
+  var allowedVals = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,!";
+  rawText = rawText.toUpperCase();
+  while (rawText.length < 5) { //provide a minimum of 5 characters always
+    rawText = rawText.concat(" ");
+  }
+  var result = "";
+  for (var i = 0; (i < rawText.length) && (i < 100) ; i++) {
+    if (allowedVals.includes(rawText.charAt(i))) {
+      result = result.concat(rawText.charAt(i));
+    }
+  }
+  if (result.localeCompare(rawText) != 0) {
+    alert("Input is limited to 100 alphanumeric characters");
+    alert("input: " + rawText);
+    alert("output: " + result);
+  }
+  return result;
+}
+
+</script>
+
+</body>
+</html>
