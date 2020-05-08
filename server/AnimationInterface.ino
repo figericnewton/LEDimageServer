@@ -19,7 +19,7 @@ void setupAnimationInterface(String aName) {
 }
 void loopAnimationInterface() {
   String fname;
-  fname = "/anim/" + animName + "/" + String(frame) + ".raw_grb";
+  fname = "/data/anim/" + animName + "/" + String(frame) + ".raw_grb";
   File imgFile = SD.open(fname, "r"); //open the image frame
   if (!imgFile) {
     //Serial.println("file open failed");

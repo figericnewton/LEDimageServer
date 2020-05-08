@@ -36,7 +36,7 @@ String fetchHomePage() {
       break;
     case DISP_ANIMATING:
       retPage.replace("DISPLAY_MODE_TEXT", "Currently displaying this animation:");
-      retPage.replace("IMAGE_PREVIEW_PATH", "/anim/" + animName + "/preview.gif");
+      retPage.replace("IMAGE_PREVIEW_PATH", "/data/anim/" + animName + "/preview.gif");
       retPage.replace("SINGLE_IMAGE_DISPLAY", "default");
       retPage.replace("FIVE_IMAGE_DISPLAY", "none");
       //fixme, add the animation here
@@ -56,33 +56,6 @@ String fetchHomePage() {
       retPage.replace("FIVE_IMAGE_DISPLAY", "none");
       break;
   }
-
-  //if (curImageName == "") {
-  //ret += "    <h2>No Image Currently Selected!</h2>\n";
-  //}
- // else {
-  //ret += "    <h2>Current Image</h2>\n";
-  //ret += "    <img src=\"" + curImageName + "\" alt=\"current image\">\n";
-  //}
-//  ret += "    <h2>Click on an image below to change the current image!</h2>\n";
-//  Dir rootDir = SD.openDir("/");
-//  String fName = "\n";
-//  while (rootDir.next()) {
-//    fName = rootDir.fileName();
-//    if (fName.endsWith(".bmp")) {
-//      fName = fName.substring(1,-1);
-//      ret += "    <a href=\"/change?imgName=" + fName + "\">\n";
-//      ret += "      <img src=\"" + fName + "\" alt=\"" + fName + "\">\n";
-//      ret += "    </a>\n";
-//    }
-//  }
-//  ret += "    <h2>Or upload a new bitmap image to the LED strips!</h2>\n";
-//  ret += "    <form method=\"post\" enctype=\"multipart/form-data\" action=\"/upload\">\n";
-//  ret += "      <input type=\"file\" name=\"pic\" accept=\"image/bmp\">\n";
-//  ret += "      <input type=\"submit\" value=\"Submit\">\n";
-//  ret += "    </form>\n";
-//  ret += "  </body>\n";
-//  ret += "</html>\n";
   return retPage;
 }
 String fetchAnimPage() {
