@@ -46,7 +46,7 @@ String fetchHomePage() {
       retPage.replace("SINGLE_IMAGE_DISPLAY", "none");
       retPage.replace("FIVE_IMAGE_DISPLAY", "default");
       for (int i = 0; i < 5; i++) {
-        retPage.replace("IMAGE_" + String(i), "/data/font/" + textDisplay.charAt(i) + ".bmp");
+        retPage.replace("IMAGE_" + String(i), "/data/font/" + String(textDisplay.charAt(i)) + ".bmp");
       }
       break;
     case DISP_CAMERA:
@@ -68,10 +68,11 @@ String fetchAnimPage() {
   retPage = animPageFile.readString();
   animPageFile.close();
   String tmpHTMLtoAdd = "";
-  Dir animDir = SD.openDir("/data/anim");
+  File animDir = SD.open("/data/anim");
   String animName;
-  while (animDir.next()) {
-    animName = animDir.fileName();
+  File f;
+  while (f = animDir.openNextFile()) {
+    animName = f.name();
     tmpHTMLtoAdd += "<a href=\"/home?command=animate&animName=" + animName + "\">";
     tmpHTMLtoAdd += "<img src=\"/data/anim/" + animName + "/preview.gif\" style=\"width:100%\" alt=\"Animation Preview\">";
     tmpHTMLtoAdd += "</a>\n";
@@ -89,10 +90,11 @@ String fetchImgPage() {
   retPage = imgPageFile.readString();
   imgPageFile.close();
   String tmpHTMLtoAdd = "";
-  Dir imgDir = SD.openDir("/data/img");
+  File imgDir = SD.open("/data/img");
   String imgName;
-  while (imgDir.next()) {
-    imgName = imgDir.fileName();
+  File f;
+  while (f = imgDir.openNextFile()) {
+    imgName = f.name();
     tmpHTMLtoAdd += "<a href=\"/home?command=image&imgName=" + imgName + "\">";
     tmpHTMLtoAdd += "<img src=\"/data/img/" + imgName + "\" style=\"width:100%\" alt=\"Image Preview\">";
     tmpHTMLtoAdd += "</a>\n";
@@ -109,7 +111,7 @@ void handleRoot() {
       displayMode = DISP_OFF;
     }
     else if ( server.arg("command") == "animate" ) {
-      if ( server.hasArg("animName") {
+      if ( server.hasArg("animName") ) {
         setupAnimationInterface(server.arg("animName"));
       }
     }
@@ -199,6 +201,10 @@ void setupWebInterface() {
 
   server.on("/", handleRoot);
   server.on("/home", handleRoot);
+  server.on("/select_image", [](){ server.send(200, "text/html", fetchImgPage()); });
+  server.on("/select_animation", [](){ server.send(200, "text/html", fetchAnimPage()); });
+  server.on("/upload_animation", handleRoot); //FIXME: currently not yet implemented an animation upload
+  server.on("/upload_image", [](){ File f = SD.open("/web/upload_image.html"); server.streamFile(f, "text/html"); f.close(); });
   server.on("/text_display", [](){ File f = SD.open("/web/text_display.html"); server.streamFile(f, "text/html"); f.close(); });
   server.on("/upload", HTTP_GET, [](){ server.send(404, "text/plain", "404: Not Found"); });
   server.on("/upload", HTTP_POST, [](){ server.send(200); }, handleUpload);

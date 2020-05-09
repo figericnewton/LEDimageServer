@@ -6,6 +6,7 @@ NeoBitmapFile<NeoGrbFeature, File> imageBMP;
 
 // define a custom shader object that does the gamma correction
 NeoGamma<NeoGammaTableMethod> colorGamma;
+//template<typename T_COLOR_FEATURE> class GammaCorrectionShader : public NeoShaderBase {
 class GammaCorrectionShader : public NeoShaderBase {
   public:
     RgbColor Apply(uint16_t index, RgbColor original) {
@@ -28,9 +29,9 @@ void setupImageInterface(String fileName, uint8_t scroll) {
   scrollImg = scroll;
   imageScrollOffset = 0; //always start this at 0
   //FIXME, could have speed improvement by only doing gamma correction once instead of all the time
-  imageBMP.Render<GammaCorrectionShader>(topPixels, colorGamma, 0, 0, 0,                    0, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
-  imageBMP.Render<GammaCorrectionShader>(midPixels, colorGamma, 0, 0, 0,   PANEL_HEIGHT/3 - 1, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
-  imageBMP.Render<GammaCorrectionShader>(botPixels, colorGamma, 0, 0, 0, 2*PANEL_HEIGHT/3 - 1, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
+  imageBMP.Render<GammaCorrectionShader>(topPixels, gammaCorrectionShader, 0, 0, 0,                    0, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
+  imageBMP.Render<GammaCorrectionShader>(midPixels, gammaCorrectionShader, 0, 0, 0,   PANEL_HEIGHT/3 - 1, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
+  imageBMP.Render<GammaCorrectionShader>(botPixels, gammaCorrectionShader, 0, 0, 0, 2*PANEL_HEIGHT/3 - 1, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
   displayMode = DISP_IMAGE;
 }
 void loopImageInterface() {
@@ -38,13 +39,13 @@ void loopImageInterface() {
     return;
   }
   imageScrollOffset++;
-  if (imageScrollOffset == image.Width()) {
+  if (imageScrollOffset == PANEL_WIDTH) {
     imageScrollOffset = 0;
   }
-  imageBMP.Render<GammaCorrectionShader>(topPixels, colorGamma, imageScrollOffset, 0,                               0,                    0, PANEL_WIDTH - imageScrollOffset, PANEL_HEIGHT/3, MyLayoutMap);
-  imageBMP.Render<GammaCorrectionShader>(topPixels, colorGamma,                 0, 0, PANEL_WIDTH - imageScrollOffset,                    0,               imageScrollOffset, PANEL_HEIGHT/3, MyLayoutMap);
-  imageBMP.Render<GammaCorrectionShader>(midPixels, colorGamma, imageScrollOffset, 0,                               0,   PANEL_HEIGHT/3 - 1, PANEL_WIDTH - imageScrollOffset, PANEL_HEIGHT/3, MyLayoutMap);
-  imageBMP.Render<GammaCorrectionShader>(midPixels, colorGamma,                 0, 0, PANEL_WIDTH - imageScrollOffset,   PANEL_HEIGHT/3 - 1,               imageScrollOffset, PANEL_HEIGHT/3, MyLayoutMap);
-  imageBMP.Render<GammaCorrectionShader>(botPixels, colorGamma, imageScrollOffset, 0,                               0, 2*PANEL_HEIGHT/3 - 1, PANEL_WIDTH - imageScrollOffset, PANEL_HEIGHT/3, MyLayoutMap);
-  imageBMP.Render<GammaCorrectionShader>(botPixels, colorGamma,                 0, 0, PANEL_WIDTH - imageScrollOffset, 2*PANEL_HEIGHT/3 - 1,               imageScrollOffset, PANEL_HEIGHT/3, MyLayoutMap);
+  imageBMP.Render<GammaCorrectionShader>(topPixels, gammaCorrectionShader, imageScrollOffset, 0,                               0,                    0, PANEL_WIDTH - imageScrollOffset, PANEL_HEIGHT/3, MyLayoutMap);
+  imageBMP.Render<GammaCorrectionShader>(topPixels, gammaCorrectionShader,                 0, 0, PANEL_WIDTH - imageScrollOffset,                    0,               imageScrollOffset, PANEL_HEIGHT/3, MyLayoutMap);
+  imageBMP.Render<GammaCorrectionShader>(midPixels, gammaCorrectionShader, imageScrollOffset, 0,                               0,   PANEL_HEIGHT/3 - 1, PANEL_WIDTH - imageScrollOffset, PANEL_HEIGHT/3, MyLayoutMap);
+  imageBMP.Render<GammaCorrectionShader>(midPixels, gammaCorrectionShader,                 0, 0, PANEL_WIDTH - imageScrollOffset,   PANEL_HEIGHT/3 - 1,               imageScrollOffset, PANEL_HEIGHT/3, MyLayoutMap);
+  imageBMP.Render<GammaCorrectionShader>(botPixels, gammaCorrectionShader, imageScrollOffset, 0,                               0, 2*PANEL_HEIGHT/3 - 1, PANEL_WIDTH - imageScrollOffset, PANEL_HEIGHT/3, MyLayoutMap);
+  imageBMP.Render<GammaCorrectionShader>(botPixels, gammaCorrectionShader,                 0, 0, PANEL_WIDTH - imageScrollOffset, 2*PANEL_HEIGHT/3 - 1,               imageScrollOffset, PANEL_HEIGHT/3, MyLayoutMap);
 }
