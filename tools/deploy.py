@@ -6,13 +6,18 @@ dataDir = os.path.join('..', 'data')
 webDir = os.path.join('..', 'web')
 target = 'D:' #configure to match SD card drive
 
+replaceData = raw_input("Copy/replace data directory too [y/n]?\n")
+
 #remove the old files from SD card
-for toDelete in [os.path.join(target, 'web'), os.path.join(target, 'data')]:
-  if os.path.exists(toDelete):
-    shutil.rmtree(toDelete)
+if os.path.exists(os.path.join(target,'web')):
+  shutil.rmtree(os.path.join(target,'web'))
+if replaceData == 'y' and os.path.exists(os.path.join(target,'data')):
+  shutil.rmtree(os.path.join(target,'data'))
 
 time.sleep(1)
 
 #copy over the new files to the SD card
-shutil.copytree(dataDir, os.path.join(target, 'data'))
+if replaceData == 'y':
+  shutil.copytree(dataDir, os.path.join(target, 'data'))
+
 shutil.copytree(webDir, os.path.join(target, 'web'))

@@ -4,6 +4,15 @@
 #include <SPI.h>
 #include <SD.h>
 
+//uncomment when debugging
+#define DEBUG
+
+#ifdef DEBUG
+  #define WRITE_OUT(x) Serial.print(x)
+#else
+  #define WRITE_OUT(x)
+#endif
+
 #define PANEL_WIDTH 75
 #define PANEL_HEIGHT 36
 #define BYTES_PER_PIX 3
@@ -17,6 +26,9 @@
 #define DISP_CAMERA 4
 uint8_t displayMode = DISP_OFF;
 
+//SPIFFS and LittleFS limit to 31 characters in a file name (32 including \0)
+#define MAX_FILE_NAME 31
+
 const RgbColor Black(0);
 const RgbColor Red(120, 0, 0);
 const RgbColor Green(0, 120, 0);
@@ -25,16 +37,17 @@ const RgbColor Blue(0, 0, 120);
 NeoPixelBus<NeoGrbFeature, NeoEsp8266Dma800KbpsMethod> topPixels(PANEL_WIDTH * PANEL_HEIGHT/3); //uses GPIO3
 NeoPixelBus<NeoGrbFeature, NeoEsp8266AsyncUart1800KbpsMethod> midPixels(PANEL_WIDTH * PANEL_HEIGHT/3); //uses GPIO2
 NeoPixelBus<NeoGrbFeature, NeoEsp8266AsyncUart0800KbpsMethod> botPixels(PANEL_WIDTH * PANEL_HEIGHT/3); //uses GPIO1
-      
+
 NeoTopology<RowMajorAlternatingLayout> topo(PANEL_WIDTH, PANEL_HEIGHT);
 uint16_t MyLayoutMap(int16_t x, int16_t y) {
   return topo.MapProbe(x, y);
 }
 
 void setup() {
-  //note that serial debigging can't be used when displaying to both GPIO1 and GPIO2
-  //Serial.begin(115200);
-  //delay(10);
+#ifdef DEBUG
+  Serial.begin(74880);
+  delay(10);
+#endif
 
   botPixels.Begin();
   delay(10);
@@ -50,7 +63,6 @@ void setup() {
 
 void loop() {
   loopWebInterface();
-  //imageScroll();
   switch(displayMode) {
     case DISP_OFF:
       topPixels.ClearTo(Black);
@@ -72,8 +84,8 @@ void loop() {
   }
   topPixels.Show();
   midPixels.Show();
+  //note Uart0800 (botPixels) is the same as Serial debug port, can't use both at the same time
+#ifndef DEBUG
   botPixels.Show();
-  //stopMillis = millis();
-  //Serial.println("Computational time to make show calls: " + String(stopMillis-startMillis));
-  //startMillis = millis();
+#endif
 }

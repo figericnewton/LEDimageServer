@@ -153,10 +153,11 @@ function textSubmit() {
   document.txtInputForm.submit();
 }
 function getCleanInput(rawText) {
-  var allowedVals = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 .,!";
+  var allowedVals = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.";
   rawText = rawText.toUpperCase();
+  rawText = rawText.split(' ').join('_')
   while (rawText.length < 5) { //provide a minimum of 5 characters always
-    rawText = rawText.concat(" ");
+    rawText = rawText.concat("_");
   }
   var result = "";
   for (var i = 0; (i < rawText.length) && (i < 100) ; i++) {

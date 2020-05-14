@@ -9,20 +9,21 @@ NeoVerticalSpriteSheet<NeoBufferProgmemMethod<NeoGrbFeature>> curSprites(
       
 uint16_t numFrames;
 uint16_t frame = 1;
-String animName;
-void setupAnimationInterface(String aName) {
-  animName = aName;
+char animName[MAX_FILE_NAME + 1];
+void setupAnimationInterface(const char* namePtr) {
+  snprintf(animName, sizeof(animName), namePtr);
   frame = 1;
   numFrames = 160; //FIXME this should be pulled from a metafile of some sort
   
   displayMode = DISP_ANIMATING;
 }
 void loopAnimationInterface() {
-  String fname;
-  fname = "/data/anim/" + animName + "/" + String(frame) + ".raw_grb";
-  File imgFile = SD.open(fname, "r"); //open the image frame
+  char fname[MAX_FILE_NAME + 1];
+  snprintf(fname, sizeof(fname), "/data/anim/%s/%i.grb", animName, frame);
+
+  File imgFile = SD.open(fname, FILE_READ); //open the image frame
   if (!imgFile) {
-    //Serial.println("file open failed");
+    WRITE_OUT("file open failed\n");
     return;
   }
   imgFile.readBytes((char *)curSpriteFrame, BYTES_PER_PIX * PANEL_WIDTH * PANEL_HEIGHT); //copy GRB data to sprite sheet data buffer

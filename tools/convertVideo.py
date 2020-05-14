@@ -36,8 +36,8 @@ vidName = raw_input("Enter the name to give video:\n")
 if not re.match("^[a-zA-Z_]*$", vidName):
   print ("Only letters or underscores allowed.")
   sys.exit()
-if len(vidName) > 10:
-  print ("Name must be less than 10 characters.")
+if len(vidName) > 8:
+  print ("Name must be less than 8 characters.")
 
 dstDir = os.path.join(os.path.dirname(sys.path[0]), 'data', 'anim', vidName)
 if os.path.exists(dstDir):
@@ -66,7 +66,7 @@ for filename in os.listdir(dstDir):
     gifImgs.append(im)
   
   frameCount += 1
-  newFilename = str(frameCount) + '.raw_grb'
+  newFilename = str(frameCount) + '.grb'
   print ('processing ' + newFilename)
   byte_dat = im.tobytes("raw","RGB");
   with open(os.path.join(dstDir, newFilename), 'wb') as fout:
@@ -76,5 +76,5 @@ for filename in os.listdir(dstDir):
       fout.write(chr(gamTable[ord(b)]))
   os.remove(os.path.join(dstDir, filename))
 
-gifImgs[0].save(os.path.join(dstDir, 'preview.gif'), save_all=True, append_images=gifImgs[1:], duration=40, loop=0)
+gifImgs[0].save(os.path.join(dstDir, 'pvw.gif'), save_all=True, append_images=gifImgs[1:], duration=40, loop=0)
 
