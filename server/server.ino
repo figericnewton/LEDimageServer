@@ -5,7 +5,7 @@
 #include <SD.h>
 
 //uncomment when debugging
-#define DEBUG
+//#define DEBUG
 
 #ifdef DEBUG
   #define WRITE_OUT(x) Serial.print(x)
@@ -19,12 +19,13 @@
 #define BYTES_PER_PIX 3
 #define CS_PIN D8
 
-#define DISP_OFF 0
-#define DISP_IMAGE 1
-#define DISP_ANIMATING 2
-#define DISP_TEXT 3
-#define DISP_CAMERA 4
-uint8_t displayMode = DISP_OFF;
+enum e_dispMode {
+  DISP_OFF,
+  DISP_IMAGE,
+  DISP_ANIMATING,
+  DISP_TEXT,
+  DISP_CAMERA
+} displayMode;
 
 //SPIFFS and LittleFS limit to 31 characters in a file name (32 including \0)
 #define MAX_FILE_NAME 31
