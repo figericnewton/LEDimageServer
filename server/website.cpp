@@ -116,7 +116,7 @@ AsyncWebServer* setupWebInterface() {
   //ws.onEvent(onWsEvent);
   //server.addHandler(&ws);
   
-  server.serveStatic("/res/", SDFS, "/web/res/");
+  server.serveStatic("/web/res/", SDFS, "/web/res/");
   server.rewrite("/", "/home.html");
   server
     .serveStatic("/home.html", SDFS, "/web/home.html")
