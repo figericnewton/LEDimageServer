@@ -1,34 +1,8 @@
-//the intent of this program is to provide a web interface for updating an LED display
 
-#include <NeoPixelBus.h>
-#include <SPI.h>
-#include <SD.h>
+#include "globals.h"
+#include "website.h"
 
-//uncomment when debugging
-//#define DEBUG
-
-#ifdef DEBUG
-  #define WRITE_OUT(x) Serial.print(x)
-#else
-  #define WRITE_OUT(x)
-#endif
-
-#define PANEL_WIDTH 75
-#define PANEL_HEIGHT 36
-#define BYTES_PER_PIX 3
-#define BYTES_PER_PIX 3
 #define CS_PIN D8
-
-enum e_dispMode {
-  DISP_OFF,
-  DISP_IMAGE,
-  DISP_ANIMATING,
-  DISP_TEXT,
-  DISP_CAMERA
-} displayMode;
-
-//SPIFFS and LittleFS limit to 31 characters in a file name (32 including \0)
-#define MAX_FILE_NAME 31
 
 const RgbColor Black(0);
 const RgbColor Red(120, 0, 0);
@@ -37,12 +11,17 @@ const RgbColor Blue(0, 0, 120);
 
 NeoPixelBus<NeoGrbFeature, NeoEsp8266Dma800KbpsMethod> topPixels(PANEL_WIDTH * PANEL_HEIGHT/3); //uses GPIO3
 NeoPixelBus<NeoGrbFeature, NeoEsp8266AsyncUart1800KbpsMethod> midPixels(PANEL_WIDTH * PANEL_HEIGHT/3); //uses GPIO2
-NeoPixelBus<NeoGrbFeature, NeoEsp8266AsyncUart0800KbpsMethod> botPixels(PANEL_WIDTH * PANEL_HEIGHT/3); //uses GPIO1
+#ifndef DEBUG
+NeoPixelBus<NeoGrbFeature, NeoEsp8266AsyncUart0800KbpsMethod> botPixels(PANEL_WIDTH * PANEL_HEIGHT/3); //uses GPIO1 (which conflicts with serial monitoring)
+#endif
 
-NeoTopology<RowMajorAlternatingLayout> topo(PANEL_WIDTH, PANEL_HEIGHT);
+NeoTopology<RowMajorAlternatingLayout> topo(PANEL_WIDTH, PANEL_HEIGHT/3);
 uint16_t MyLayoutMap(int16_t x, int16_t y) {
   return topo.MapProbe(x, y);
 }
+
+uint8_t currentFrameBuffer[BYTES_PER_PIX * PANEL_WIDTH * PANEL_HEIGHT];
+NeoBuffer<NeoBufferProgmemMethod<NeoGrbFeature>> neoPixFrameBuffer(PANEL_WIDTH, PANEL_HEIGHT, currentFrameBuffer);
 
 void setup() {
 #ifdef DEBUG
@@ -50,39 +29,32 @@ void setup() {
   delay(10);
 #endif
 
+#ifndef DEBUG
   botPixels.Begin();
   delay(10);
+#endif
   topPixels.Begin();
   delay(10);
   midPixels.Begin();
   delay(10);
 
-  SD.begin(CS_PIN); //start the file system
+  SDFS.setConfig(SDFSConfig(CS_PIN, SPI_HALF_SPEED));
+  SDFS.begin(); //start the file system
 
-  setupWebInterface();
+  AsyncWebServer* server = setupWebInterface();
+  setupAllOperatingModes(server);
 }
 
 void loop() {
   loopWebInterface();
-  switch(displayMode) {
-    case DISP_OFF:
-      topPixels.ClearTo(Black);
-      midPixels.ClearTo(Black);
-      botPixels.ClearTo(Black);
-      break;
-    case DISP_IMAGE:
-      loopImageInterface();
-      break;
-    case DISP_ANIMATING:
-      loopAnimationInterface();
-      break;
-    case DISP_TEXT:
-      loopTextInterface();
-      break;
-    case DISP_CAMERA:
-      //FIXME: not yet implemented
-      break;
-  }
+  CurrentOperatingMode.updateFrame(currentFrameBuffer, &neoPixFrameBuffer);
+  neoPixFrameBuffer.Blt(topPixels, 0, 0, 0,                0, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
+  neoPixFrameBuffer.Blt(midPixels, 0, 0, 0,   PANEL_HEIGHT/3, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
+#ifndef DEBUG
+  neoPixFrameBuffer.Blt(botPixels, 0, 0, 0, 2*PANEL_HEIGHT/3, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
+#endif
+
+  //FIXME: include logic to set an explicit refresh rate
   topPixels.Show();
   midPixels.Show();
   //note Uart0800 (botPixels) is the same as Serial debug port, can't use both at the same time

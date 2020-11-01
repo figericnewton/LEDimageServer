@@ -53,14 +53,13 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 <nav class="w3-sidebar w3-collapse w3-white w3-animate-left" style="z-index:3;width:300px;" id="navBar"><br>
   <div class="w3-bar-block">
     <a href="#" class="w3-bar-item w3-button w3-padding-16 w3-hide-large w3-dark-grey w3-hover-black" onclick="w3_close()" title="close menu"><i class="fa fa-remove fa-fw"></i>  Close Menu</a>
-    <a href="/home" class="w3-bar-item w3-button w3-padding"> Home</a>
-    <a href="/home?command=off" class="w3-bar-item w3-button w3-padding"> Turn Display Off</a>
-    <a href="/text_display" class="w3-bar-item w3-button w3-padding w3-blue"> Display Text</a>
-    <a href="/select_image" class="w3-bar-item w3-button w3-padding"> Image Selection</a>
-    <a href="/upload_image" class="w3-bar-item w3-button w3-padding"> Upload Image</a>
-    <a href="/select_animation" class="w3-bar-item w3-button w3-padding"> Animation Selection</a>
-    <a href="/upload_animation" class="w3-bar-item w3-button w3-padding"> Upload Animation</a>
-    <a href="/stream_camera" class="w3-bar-item w3-button w3-padding"> Stream Camera</a><br><br>
+    <a href="/" class="w3-bar-item w3-button w3-padding"> Home</a>
+    <a href="/action/off" class="w3-bar-item w3-button w3-padding"> Turn Display Off</a>
+    <a href="/text_display.html" class="w3-bar-item w3-button w3-padding w3-blue"> Display Text</a>
+    <a href="/select_image.html" class="w3-bar-item w3-button w3-padding"> Image Selection</a>
+    <a href="/upload_image.html" class="w3-bar-item w3-button w3-padding"> Upload Image</a>
+    <a href="/select_animation.html" class="w3-bar-item w3-button w3-padding"> Animation Selection</a>
+    <a href="/upload_animation.html" class="w3-bar-item w3-button w3-padding"> Upload Animation</a><br><br>
   </div>
 </nav>
 
@@ -72,9 +71,8 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
   <div class="w3-container">
     <h2>Setup for Displaying Text on the Screen</h2>
-    <form name="txtInputForm" action="/home" method="post">
+    <form name="txtInputForm" action="/action/text" method="post">
       <input type="hidden" id="textInputSubmit" name="textInput" value="Error">
-      <input type="hidden" id="command" name="command" value="text">
       <input type="checkbox" id="scrollText" name="scrollText" value="true">
       <label for="scrollText"> Scroll text across screen?</label><br>
     </form>
