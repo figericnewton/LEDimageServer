@@ -17,8 +17,6 @@ typedef struct OperatingMode_t {
 } OperatingMode;
 
 extern OperatingMode CurrentOperatingMode;
-extern OperatingMode OffOperatingMode;
-//FIXME: add other modes here
 
 void setupAllOperatingModes(AsyncWebServer* server);
 //void setCurrentOperatingMode(OperatingMode newMode);
