@@ -6,7 +6,7 @@ dataDir = os.path.join('..', 'data')
 webDir = os.path.join('..', 'web')
 target = 'D:' #configure to match SD card drive
 
-replaceData = raw_input("Copy/replace data directory too [y/n]?\n")
+replaceData = input("Copy/replace data directory too [y/n]?\n")
 
 #remove the old files from SD card
 if os.path.exists(os.path.join(target,'web')):
