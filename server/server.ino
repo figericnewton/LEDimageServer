@@ -38,13 +38,13 @@ void setup() {
   midPixels.Begin();
   delay(10);
 
-  SDFS.setConfig(SDFSConfig(CS_PIN, SPI_HALF_SPEED));
+  SDFS.setConfig(SDFSConfig(CS_PIN, SD_SCK_MHZ(50)));
   SDFS.begin(); //start the file system
 
   AsyncWebServer* server = setupWebInterface();
   setupAllOperatingModes(server);
+  startTimer();
 }
-
 void loop() {
   loopWebInterface();
   CurrentOperatingMode->updateFrame(currentFrameBuffer, &neoPixFrameBuffer);
@@ -61,4 +61,5 @@ void loop() {
 #ifndef DEBUG
   botPixels.Show();
 #endif
+  stopTimer();
 }

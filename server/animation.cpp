@@ -8,6 +8,7 @@ struct AnimationInfo {
   char name[MAX_FILE_NAME + 1] = ""; //name of the animation
   uint16_t numFrames; //total number of frames
   uint16_t frame; //current frame number
+  File imgFile;
 } animInfo;
 
 void anim__processRequest(AsyncWebServerRequest* request);
@@ -23,13 +24,13 @@ void anim__updateFrame(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMe
   char fname[MAX_FILE_NAME + 1];
   snprintf(fname, sizeof(fname), "/data/anim/%s/%i.grb", animInfo.name, animInfo.frame);
 
-  File imgFile = SDFS.open(fname, "r"); //open the image frame
-  if (!imgFile) {
+  animInfo.imgFile = SDFS.open(fname, "r"); //open the image frame
+  if (!animInfo.imgFile) {
     WRITE_OUT("file open failed\n");
     return;
   }
-  imgFile.readBytes((char *)currentFrameBuffer, sizeof(currentFrameBuffer)); //copy GRB data to data buffer
-  imgFile.close();
+  animInfo.imgFile.readBytes((char *)currentFrameBuffer, sizeof(currentFrameBuffer)); //copy GRB data to data buffer
+  animInfo.imgFile.close();
   animInfo.frame++;
   if (animInfo.frame > animInfo.numFrames) {
     animInfo.frame = 1;
