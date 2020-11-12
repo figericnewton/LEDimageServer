@@ -4,9 +4,11 @@
 
 #include "globals.h"
 
-char animName[MAX_FILE_NAME + 1];
-uint16_t numFrames;
-uint16_t frame = 1;
+struct AnimationInfo {
+  char name[MAX_FILE_NAME + 1] = ""; //name of the animation
+  uint16_t numFrames; //total number of frames
+  uint16_t frame; //current frame number
+} animInfo;
 
 void anim__processRequest(AsyncWebServerRequest* request);
 String anim__templateProcessor(const String& var);
@@ -19,7 +21,7 @@ void anim__setup(AsyncWebServer* server) {
 }
 void anim__updateFrame(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMethod<NeoGrbFeature>>* neoPixFrameBuffer) {
   char fname[MAX_FILE_NAME + 1];
-  snprintf(fname, sizeof(fname), "/data/anim/%s/%i.grb", animName, frame);
+  snprintf(fname, sizeof(fname), "/data/anim/%s/%i.grb", animInfo.name, animInfo.frame);
 
   File imgFile = SDFS.open(fname, "r"); //open the image frame
   if (!imgFile) {
@@ -28,9 +30,9 @@ void anim__updateFrame(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMe
   }
   imgFile.readBytes((char *)currentFrameBuffer, sizeof(currentFrameBuffer)); //copy GRB data to data buffer
   imgFile.close();
-  frame++;
-  if (frame > numFrames) {
-    frame = 1;
+  animInfo.frame++;
+  if (animInfo.frame > animInfo.numFrames) {
+    animInfo.frame = 1;
   }
 }
 OperatingMode AnimationOperatingMode = {
@@ -42,17 +44,17 @@ void anim__processRequest(AsyncWebServerRequest* request) {
   if (!request->hasParam("animName")) {
     return;
   }
-  snprintf(animName, sizeof(animName), request->getParam("animName")->value().c_str());
-  snprintf(AnimationOperatingMode.prevPath, sizeof(AnimationOperatingMode.prevPath), "/data/anim/%s/pvw.gif", animName);
-  frame = 1;
+  snprintf(animInfo.name, sizeof(animInfo.name), request->getParam("animName")->value().c_str());
+  snprintf(AnimationOperatingMode.prevPath, sizeof(AnimationOperatingMode.prevPath), "/data/anim/%s/pvw.gif", animInfo.name);
+  animInfo.frame = 1;
   char fname[MAX_FILE_NAME];
   Dir dir;
-  snprintf(fname, sizeof(fname), "/data/anim/%s", animName);
+  snprintf(fname, sizeof(fname), "/data/anim/%s", animInfo.name);
   dir = SDFS.openDir(fname);
-  numFrames = -1; // FIXME: rework this to create a metafile that contains how many frames there are and any other information we want
+  animInfo.numFrames = -1; // FIXME: rework this to create a metafile that contains how many frames there are and any other information we want
   while (dir.next()) {
     //if (f.name().endsWith(".grb")) {
-      numFrames++;
+      animInfo.numFrames++;
     //}
   }
   CurrentOperatingMode = &AnimationOperatingMode;
