@@ -10,7 +10,7 @@
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
 
-#define PANEL_WIDTH 75
+#define PANEL_WIDTH 72
 #define PANEL_HEIGHT 36
 #define BYTES_PER_PIX 3
 

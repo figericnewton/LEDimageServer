@@ -46,18 +46,26 @@ void anim__processRequest(AsyncWebServerRequest* request) {
     return;
   }
   snprintf(animInfo.name, sizeof(animInfo.name), request->getParam("animName")->value().c_str());
-  snprintf(AnimationOperatingMode.prevPath, sizeof(AnimationOperatingMode.prevPath), "/data/anim/%s/pvw.gif", animInfo.name);
   animInfo.frame = 1;
   char fname[MAX_FILE_NAME];
-  Dir dir;
-  snprintf(fname, sizeof(fname), "/data/anim/%s", animInfo.name);
-  dir = SDFS.openDir(fname);
-  animInfo.numFrames = -1; // FIXME: rework this to create a metafile that contains how many frames there are and any other information we want
-  while (dir.next()) {
-    //if (f.name().endsWith(".grb")) {
-      animInfo.numFrames++;
-    //}
+  snprintf(fname, sizeof(fname), "/data/anim/%s/meta.txt", animInfo.name);
+  File metadata = SDFS.open(fname, "r");
+  char tmpRead[20]; //hardcode to 20bytes for now, if more is needed in future will have to update
+  long bytesRead;
+  while (bytesRead = metadata.readBytesUntil(",", tmpRead, sizeof(tmpRead) - 1) > 0) {
+    tmpRead[bytesRead] = '\0'; //add null terminator
+    if (strcmp(tmpRead, "frames")) {
+      bytesRead = metadata.readBytesUntil("\n", tmpRead, sizeof(tmpRead) - 1);
+      tmpRead[bytesRead] = '\0'; //add null terminator
+      animInfo.numFrames = atoi(tmpRead);
+    } else if (strcmp(tmpRead, "prevName")) {
+      bytesRead = metadata.readBytesUntil("\n", tmpRead, sizeof(tmpRead) - 1);
+      tmpRead[bytesRead] = '\0'; //add null terminator
+      snprintf(AnimationOperatingMode.prevPath, sizeof(AnimationOperatingMode.prevPath), "/data/anim/%s/%s", animInfo.name, tmpRead);
+    }
   }
+  animInfo.numFrames = metadata.parseInt(SKIP_ALL);
+  
   CurrentOperatingMode = &AnimationOperatingMode;
   WRITE_OUT("Displaying animation!\n");
   request->redirect("/home.html");

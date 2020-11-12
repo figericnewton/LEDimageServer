@@ -6,9 +6,8 @@ import shutil
 import time
 import subprocess
 import PIL.Image
-from itertools import izip
-from Tkinter import *
-import Tkinter, Tkconstants, tkFileDialog
+from tkinter import *
+import tkinter, tkinter.filedialog
 
 #gamma correction table
 gamTable = [
@@ -30,9 +29,9 @@ gamTable = [
     223, 225, 227, 229, 231, 233, 235, 238, 240, 242, 244, 246, 248, 251, 253, 255
 ]
 
-srcFile = tkFileDialog.askopenfilename(title='Select video you want to convert') # shows dialog box and return the path
+srcFile = tkinter.filedialog.askopenfilename(title='Select video you want to convert') # shows dialog box and return the path
 srcFile = srcFile.replace('/', os.sep)
-vidName = raw_input("Enter the name to give video:\n")
+vidName = input("Enter the name to give video:\n")
 if not re.match("^[a-zA-Z_]*$", vidName):
   print ("Only letters or underscores allowed.")
   sys.exit()
@@ -49,7 +48,7 @@ time.sleep(1)
 
 vlcLoc = r"C:\Program Files (x86)\VideoLAN\VLC"
 os.chdir(vlcLoc)
-cmd = 'vlc.exe "' + srcFile + '" --no-avcodec-corrupted --video-filter=scene --scene-path="' + dstDir + '" --scene-format="bmp" --scene-width="75" --scene-height="36" --scene-prefix="" --scene-ratio=1 vlc://quit'
+cmd = 'vlc.exe "' + srcFile + '" --no-avcodec-corrupted --video-filter=scene --scene-path="' + dstDir + '" --scene-format="bmp" --scene-width="72" --scene-height="36" --scene-prefix="" --scene-ratio=1 vlc://quit'
 os.system(cmd)
 print (cmd)
 time.sleep(1)
@@ -71,10 +70,13 @@ for filename in os.listdir(dstDir):
   byte_dat = im.tobytes("raw","RGB");
   with open(os.path.join(dstDir, newFilename), 'wb') as fout:
     for r, g, b in zip(*[iter(byte_dat)]*3):
-      fout.write(chr(gamTable[ord(g)]))
-      fout.write(chr(gamTable[ord(r)]))
-      fout.write(chr(gamTable[ord(b)]))
+      fout.write(gamTable[g].to_bytes(1,'big')) #FIXME: need to check whether NeoPixelBus arrays are big or little endian
+      fout.write(gamTable[r].to_bytes(1,'big'))
+      fout.write(gamTable[b].to_bytes(1,'big'))
   os.remove(os.path.join(dstDir, filename))
 
 gifImgs[0].save(os.path.join(dstDir, 'pvw.gif'), save_all=True, append_images=gifImgs[1:], duration=40, loop=0)
 
+with open(os.path.join(dstDir, 'meta.txt'), 'w+') as metafile:
+  metafile.write('frames,' + str(frameCount) + '\n')
+  metafile.write('prevName,pvw.gif\n')
