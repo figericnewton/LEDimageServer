@@ -9,14 +9,13 @@ typedef struct OperatingMode_t {
   //sets up this operation mode's part of the website
   void (*setup)(AsyncWebServer* server);
 
-  //returns a path to the preview image for this operating mode
-  char* (*getPreviewPath)();
+  char prevPath[MAX_FILE_NAME + 1];
 
   //updates the frame and then returns a pointer to the neo buffer
   void (*updateFrame)(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMethod<NeoGrbFeature>>* neoPixFrameBuffer);
 } OperatingMode;
 
-extern OperatingMode CurrentOperatingMode;
+extern OperatingMode *CurrentOperatingMode;
 
 void setupAllOperatingModes(AsyncWebServer* server);
 //void setCurrentOperatingMode(OperatingMode newMode);

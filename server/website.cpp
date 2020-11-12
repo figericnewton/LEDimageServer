@@ -94,7 +94,7 @@ String homeTemplateProcessor(const String& var) {
     //FIXME: consider creating text for each different display mode instead of this generic text
     return F("Preview of the LED display:");
   } else if ( var == "IMAGE_PREVIEW_PATH" ) {
-    return CurrentOperatingMode.getPreviewPath();
+    return String(CurrentOperatingMode->prevPath);
   }
   return String();
 }

@@ -17,11 +17,6 @@ void anim__setup(AsyncWebServer* server) {
     ->serveStatic("/select_animation.html", SDFS, "/web/select_animation.html")
     .setTemplateProcessor(anim__templateProcessor);
 }
-char* anim__getPreviewPath() {
-  char prevPath[MAX_FILE_NAME + 1];
-  snprintf(prevPath, sizeof(prevPath), "/data/anim/%s/pvw.gif", animName);
-  return prevPath;
-}
 void anim__updateFrame(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMethod<NeoGrbFeature>>* neoPixFrameBuffer) {
   char fname[MAX_FILE_NAME + 1];
   snprintf(fname, sizeof(fname), "/data/anim/%s/%i.grb", animName, frame);
@@ -40,7 +35,7 @@ void anim__updateFrame(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMe
 }
 OperatingMode AnimationOperatingMode = {
   .setup = anim__setup,
-  .getPreviewPath = anim__getPreviewPath,
+  { .prevPath = "" },
   .updateFrame = anim__updateFrame,
 };
 void anim__processRequest(AsyncWebServerRequest* request) {
@@ -48,31 +43,32 @@ void anim__processRequest(AsyncWebServerRequest* request) {
     return;
   }
   snprintf(animName, sizeof(animName), request->getParam("animName")->value().c_str());
+  snprintf(AnimationOperatingMode.prevPath, sizeof(AnimationOperatingMode.prevPath), "/data/anim/%s/pvw.gif", animName);
   frame = 1;
   char fname[MAX_FILE_NAME];
-  File dir, f;
+  Dir dir;
   snprintf(fname, sizeof(fname), "/data/anim/%s", animName);
-  dir = SDFS.open(fname, "r");
+  dir = SDFS.openDir(fname);
   numFrames = -1; // FIXME: rework this to create a metafile that contains how many frames there are and any other information we want
-  while (f = dir.openNextFile()) {
+  while (dir.next()) {
     //if (f.name().endsWith(".grb")) {
       numFrames++;
     //}
   }
-  CurrentOperatingMode = AnimationOperatingMode;
+  CurrentOperatingMode = &AnimationOperatingMode;
   WRITE_OUT("Displaying animation!\n");
   request->redirect("/home.html");
 }
 String anim__templateProcessor(const String& var) {
   String retHTML = String();
-  File dir, f;
+  Dir dir;
   if (var == "ANIMATION_PREVIEW_CONTENTS") {
-    dir = SDFS.open(F("/data/anim"), "r");
-    while (f = dir.openNextFile()) {
+    dir = SDFS.openDir(F("/data/anim"));
+    while (dir.next()) {
       retHTML += F("<a href=\"/action/animation?animName=");
-      retHTML += f.name();
+      retHTML += dir.fileName();
       retHTML += F("\"><img src=\"/data/anim/");
-      retHTML += f.name();
+      retHTML += dir.fileName();
       retHTML += F("/pvw.gif\" style=\"width:100%%\" alt=\"Animation Preview\"></a>\n");
     }
   }
