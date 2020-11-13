@@ -18,4 +18,20 @@ void stopTimer() {
 }
 #endif
 
+#ifdef DEBUG
+uint8_t * heapptr, * stackptr;
+void check_mem() {
+  int SP;
+  stackptr = (uint8_t *)malloc(4);          // use stackptr temporarily
+  heapptr = stackptr;                     // save value of heap pointer
+  free(stackptr);      // free up the memory again (sets stackptr to 0)
+  stackptr =  (uint8_t *)(&SP);           // save value of stack pointer
+}
+void echoFreeMemory() {
+  check_mem();
+  WRITE_OUT("memory left: ");
+  WRITE_OUT(stackptr - heapptr);
+  WRITE_OUT("\n");
+}
+#endif
 #endif

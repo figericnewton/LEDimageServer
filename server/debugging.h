@@ -8,8 +8,10 @@
 
 #ifdef DEBUG
   #define WRITE_OUT(x) Serial.print(x)
+  void echoFreeMemory();
 #else
-  #define WRITE_OUT(x)  
+  #define WRITE_OUT(x) 
+  #define echoFreeMemory(x)   
 #endif
 
 #ifdef TIMER_ENABLED
