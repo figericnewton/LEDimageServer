@@ -77,6 +77,6 @@ for filename in os.listdir(dstDir):
 
 gifImgs[0].save(os.path.join(dstDir, 'pvw.gif'), save_all=True, append_images=gifImgs[1:], duration=40, loop=0)
 
-with open(os.path.join(dstDir, 'meta.txt'), 'w+') as metafile:
+with open(os.path.join(dstDir, 'meta.txt'), 'w+', newline='') as metafile:
   metafile.write('frames,' + str(frameCount) + '\n')
   metafile.write('prevName,pvw.gif\n')

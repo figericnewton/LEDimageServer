@@ -52,19 +52,18 @@ void anim__processRequest(AsyncWebServerRequest* request) {
   File metadata = SDFS.open(fname, "r");
   char tmpRead[20]; //hardcode to 20bytes for now, if more is needed in future will have to update
   long bytesRead;
-  while (bytesRead = metadata.readBytesUntil(",", tmpRead, sizeof(tmpRead) - 1) > 0) {
+  while (metadata.available() && ((bytesRead = metadata.readBytesUntil(',', tmpRead, sizeof(tmpRead) - 1)) > 0)) {
     tmpRead[bytesRead] = '\0'; //add null terminator
-    if (strcmp(tmpRead, "frames")) {
-      bytesRead = metadata.readBytesUntil("\n", tmpRead, sizeof(tmpRead) - 1);
+    if (strcmp(tmpRead, "frames") == 0) {
+      bytesRead = metadata.readBytesUntil('\n', tmpRead, sizeof(tmpRead) - 1);
       tmpRead[bytesRead] = '\0'; //add null terminator
       animInfo.numFrames = atoi(tmpRead);
-    } else if (strcmp(tmpRead, "prevName")) {
-      bytesRead = metadata.readBytesUntil("\n", tmpRead, sizeof(tmpRead) - 1);
+    } else if (strcmp(tmpRead, "prevName") == 0) {
+      bytesRead = metadata.readBytesUntil('\n', tmpRead, sizeof(tmpRead) - 1);
       tmpRead[bytesRead] = '\0'; //add null terminator
       snprintf(AnimationOperatingMode.prevPath, sizeof(AnimationOperatingMode.prevPath), "/data/anim/%s/%s", animInfo.name, tmpRead);
     }
   }
-  animInfo.numFrames = metadata.parseInt(SKIP_ALL);
   
   CurrentOperatingMode = &AnimationOperatingMode;
   WRITE_OUT("Displaying animation!\n");
