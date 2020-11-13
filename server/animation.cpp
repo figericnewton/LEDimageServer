@@ -8,7 +8,6 @@ struct AnimationInfo {
   char name[MAX_FILE_NAME + 1] = ""; //name of the animation
   uint16_t numFrames; //total number of frames
   uint16_t frame; //current frame number
-  File imgFile;
 } animInfo;
 
 void anim__processRequest(AsyncWebServerRequest* request);
@@ -20,21 +19,31 @@ void anim__setup(AsyncWebServer* server) {
     ->serveStatic("/select_animation.html", SDFS, "/web/select_animation.html")
     .setTemplateProcessor(anim__templateProcessor);
 }
-void anim__updateFrame(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMethod<NeoGrbFeature>>* neoPixFrameBuffer) {
+void anim__updateFrame(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMethod<NeoGrbFeature>> neoPixFrameBuffer) {
   char fname[MAX_FILE_NAME + 1];
   snprintf(fname, sizeof(fname), "/data/anim/%s/%i.grb", animInfo.name, animInfo.frame);
 
-  animInfo.imgFile = SDFS.open(fname, "r"); //open the image frame
-  if (!animInfo.imgFile) {
-    WRITE_OUT("file open failed\n");
-    return;
-  }
-  animInfo.imgFile.readBytes((char *)currentFrameBuffer, BYTES_PER_PIX * PANEL_WIDTH * PANEL_HEIGHT); //copy GRB data to data buffer
-  animInfo.imgFile.close();
   animInfo.frame++;
   if (animInfo.frame > animInfo.numFrames) {
     animInfo.frame = 1;
   }
+
+  WRITE_OUT("Opening ");
+  WRITE_OUT(fname);
+  File imgFile = SDFS.open(fname, "r"); //open the image frame
+  if (imgFile) {
+    WRITE_OUT(" -- success\n");
+  } else {
+    WRITE_OUT(" -- FAILURE\n");
+    //FIXME: this isn't elegant, but it seems to mostly fix an issue I'm seeing where the
+    //website asynchronously tries to load a file at the same time as the display
+    //and somehow the SD card system catestrophically fails
+    SDFS.end();
+    SDFS.begin();
+    return;
+  }
+  imgFile.readBytes((char *)currentFrameBuffer, BYTES_PER_PIX * PANEL_WIDTH * PANEL_HEIGHT); //copy GRB data to data buffer
+  imgFile.close();
 }
 OperatingMode AnimationOperatingMode = {
   .setup = anim__setup,
@@ -64,7 +73,6 @@ void anim__processRequest(AsyncWebServerRequest* request) {
       snprintf(AnimationOperatingMode.prevPath, sizeof(AnimationOperatingMode.prevPath), "/data/anim/%s/%s", animInfo.name, tmpRead);
     }
   }
-  
   CurrentOperatingMode = &AnimationOperatingMode;
   WRITE_OUT("Displaying animation!\n");
   request->redirect("/home.html");

@@ -47,7 +47,7 @@ void setup() {
 }
 void loop() {
   loopWebInterface();
-  CurrentOperatingMode->updateFrame(currentFrameBuffer, &neoPixFrameBuffer);
+  CurrentOperatingMode->updateFrame(currentFrameBuffer, neoPixFrameBuffer);
   neoPixFrameBuffer.Blt(topPixels, 0, 0, 0,                0, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
   neoPixFrameBuffer.Blt(midPixels, 0, 0, 0,   PANEL_HEIGHT/3, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
 #ifndef DEBUG
