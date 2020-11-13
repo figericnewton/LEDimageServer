@@ -70,9 +70,9 @@ for filename in os.listdir(dstDir):
   byte_dat = im.tobytes("raw","RGB");
   with open(os.path.join(dstDir, newFilename), 'wb') as fout:
     for r, g, b in zip(*[iter(byte_dat)]*3):
-      fout.write(gamTable[g].to_bytes(1,'big')) #FIXME: need to check whether NeoPixelBus arrays are big or little endian
-      fout.write(gamTable[r].to_bytes(1,'big'))
-      fout.write(gamTable[b].to_bytes(1,'big'))
+      fout.write(gamTable[g].to_bytes(1,'little'))
+      fout.write(gamTable[r].to_bytes(1,'little'))
+      fout.write(gamTable[b].to_bytes(1,'little'))
   os.remove(os.path.join(dstDir, filename))
 
 gifImgs[0].save(os.path.join(dstDir, 'pvw.gif'), save_all=True, append_images=gifImgs[1:], duration=40, loop=0)

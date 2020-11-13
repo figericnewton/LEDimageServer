@@ -29,7 +29,7 @@ void anim__updateFrame(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMe
     WRITE_OUT("file open failed\n");
     return;
   }
-  animInfo.imgFile.readBytes((char *)currentFrameBuffer, sizeof(currentFrameBuffer)); //copy GRB data to data buffer
+  animInfo.imgFile.readBytes((char *)currentFrameBuffer, BYTES_PER_PIX * PANEL_WIDTH * PANEL_HEIGHT); //copy GRB data to data buffer
   animInfo.imgFile.close();
   animInfo.frame++;
   if (animInfo.frame > animInfo.numFrames) {
