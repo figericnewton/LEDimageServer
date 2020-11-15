@@ -83,14 +83,11 @@ void onWsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventT
   }
 }
 */
-void handleNotFound(AsyncWebServerRequest *request) {
-  request->send(404, "text/plain", "Not found");
-}
 String homeTemplateProcessor(const String& var) {
   WRITE_OUT("template processor called to replace: ");
   WRITE_OUT(var);
   WRITE_OUT("\n");
-  if (var == "DISPLAY_MODE_TEXT") {
+  if (var == F("DISPLAY_MODE_TEXT")) {
     //FIXME: consider creating text for each different display mode instead of this generic text
     return F("Preview of the LED display:");
   } else if ( var == "IMAGE_PREVIEW_PATH" ) {
@@ -116,22 +113,19 @@ AsyncWebServer* setupWebInterface() {
   //ws.onEvent(onWsEvent);
   //server.addHandler(&ws);
   
-  server.serveStatic("/web/res/", SDFS, "/web/res/");
   server.rewrite("/", "/home.html");
+  setupAllOperatingModes(&server);
   server
     .serveStatic("/home.html", SDFS, "/web/home.html")
     .setTemplateProcessor(homeTemplateProcessor);
-  server.serveStatic("/data/", SDFS, "/data/");
-  server.onNotFound(handleNotFound);
-
+  server
+    .serveStatic("/", SDFS, "/")
+    .setCacheControl("max-age=600");
+  
   //start the actual web server
   server.begin();
   WRITE_OUT("HTTP Server Started\n");
   return &server;
-}
-void loopWebInterface() {
-  //nothing since async right?
-  //ws.cleanupClients();
 }
 
 #endif

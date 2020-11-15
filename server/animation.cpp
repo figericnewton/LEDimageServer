@@ -17,9 +17,11 @@ void anim__setup(AsyncWebServer* server) {
   server->on("/action/animation", anim__processRequest);
   server
     ->serveStatic("/select_animation.html", SDFS, "/web/select_animation.html")
-    .setTemplateProcessor(anim__templateProcessor);
+    .setTemplateProcessor(anim__templateProcessor)
+    .setCacheControl("max-age=30");
 }
 void anim__updateFrame(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMethod<NeoGrbFeature>> neoPixFrameBuffer) {
+  //WRITE_OUT("anim__updateFrame\n");
   char fname[MAX_FILE_NAME + 1];
   snprintf(fname, sizeof(fname), "/data/anim/%s/%i.grb", animInfo.name, animInfo.frame);
 
@@ -35,14 +37,18 @@ void anim__updateFrame(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMe
     WRITE_OUT(" -- success\n");
   } else {
     WRITE_OUT(" -- FAILURE\n");
-    //FIXME: this isn't elegant, but it seems to mostly fix an issue I'm seeing where the
-    //website asynchronously tries to load a file at the same time as the display
-    //and somehow the SD card system catestrophically fails
-    SDFS.end();
-    SDFS.begin();
     return;
   }
-  imgFile.readBytes((char *)currentFrameBuffer, BYTES_PER_PIX * PANEL_WIDTH * PANEL_HEIGHT); //copy GRB data to data buffer
+  //There's some sort of issue going on when the website asynchronously tries to access the SD card
+  //at the same time as I'm accessing it. For now I've found that a work-around is to break down
+  //reading the file into smaller chunks. In the future if the issue is fixed in the (SD card?) library
+  //then it is better for performance to do a single call to readBytes.
+  //it appears that this may be a memory issue after all -- need to optimize usage!
+  //imgFile.read(currentFrameBuffer, BYTES_PER_PIX * PANEL_WIDTH * PANEL_HEIGHT); //copy GRB data to data buffer
+  uint8_t* ptrRead = currentFrameBuffer;
+  while (imgFile.available()) {
+    ptrRead += imgFile.read(ptrRead, 512); //read in standard block sizes
+  }
   imgFile.close();
 }
 OperatingMode AnimationOperatingMode = {
@@ -51,7 +57,7 @@ OperatingMode AnimationOperatingMode = {
   .updateFrame = anim__updateFrame,
 };
 void anim__processRequest(AsyncWebServerRequest* request) {
-  if (!request->hasParam("animName")) {
+  if (!request->hasParam(F("animName"))) {
     return;
   }
   snprintf(animInfo.name, sizeof(animInfo.name), request->getParam("animName")->value().c_str());
@@ -80,7 +86,7 @@ void anim__processRequest(AsyncWebServerRequest* request) {
 String anim__templateProcessor(const String& var) {
   String retHTML = String();
   Dir dir;
-  if (var == "ANIMATION_PREVIEW_CONTENTS") {
+  if (var == F("ANIMATION_PREVIEW_CONTENTS")) {
     dir = SDFS.openDir(F("/data/anim"));
     while (dir.next()) {
       retHTML += F("<a href=\"/action/animation?animName=");

@@ -42,11 +42,9 @@ void setup() {
   SDFS.begin(); //start the file system
 
   AsyncWebServer* server = setupWebInterface();
-  setupAllOperatingModes(server);
   startTimer();
 }
 void loop() {
-  loopWebInterface();
   CurrentOperatingMode->updateFrame(currentFrameBuffer, neoPixFrameBuffer);
   neoPixFrameBuffer.Blt(topPixels, 0, 0, 0,                0, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
   neoPixFrameBuffer.Blt(midPixels, 0, 0, 0,   PANEL_HEIGHT/3, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
@@ -62,4 +60,5 @@ void loop() {
   botPixels.Show();
 #endif
   stopTimer();
+  echoFreeMemory();
 }
