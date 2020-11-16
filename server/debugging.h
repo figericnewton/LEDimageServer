@@ -4,22 +4,27 @@
 
 //uncomment as desired when debugging
 #define DEBUG
-//#define TIMER_ENABLED
+//#define DEBUG_TIMER_ENABLED
+//#define DEBUG_MEMORY_ENABLED
 
 #ifdef DEBUG
-  #define WRITE_OUT(x) Serial.print(x)
-  void echoFreeMemory();
+  #define WRITE_OUT(x) Serial.printf(x)
 #else
-  #define WRITE_OUT(x) 
-  #define echoFreeMemory(x)   
+  #define WRITE_OUT(x)  
 #endif
 
-#ifdef TIMER_ENABLED
+#ifdef DEBUG_TIMER_ENABLED
   void startTimer();
   void stopTimer();
 #else
   #define startTimer(x)  
   #define stopTimer(x)  
+#endif
+
+#ifdef DEBUG_MEMORY_ENABLED
+  void echoFreeMemory();
+#else
+  #define echoFreeMemory(x)   
 #endif
 
 #endif

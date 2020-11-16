@@ -4,7 +4,7 @@
 
 #include "globals.h"
 
-#ifdef TIMER_ENABLED
+#ifdef DEBUG_TIMER_ENABLED
 long lastTime = 0;
 void startTimer() {
   lastTime = millis();
@@ -18,7 +18,7 @@ void stopTimer() {
 }
 #endif
 
-#ifdef DEBUG
+#ifdef DEBUG_MEMORY_ENABLED
 uint8_t * heapptr, * stackptr;
 void check_mem() {
   int SP;
