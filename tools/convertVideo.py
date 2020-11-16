@@ -56,25 +56,27 @@ time.sleep(1)
 
 gifImgs = []
 frameCount = 0
-for filename in os.listdir(dstDir):
-  try:
-    im = PIL.Image.open(os.path.join(dstDir, filename))
-  except:
-    os.remove(os.path.join(dstDir, filename))
-    continue
-  if len(gifImgs) < 10:
-    gifImgs.append(im)
-  
-  frameCount += 1
-  newFilename = str(frameCount) + '.grb'
-  print ('processing ' + newFilename)
-  byte_dat = im.tobytes("raw","RGB");
-  with open(os.path.join(dstDir, newFilename), 'wb') as fout:
+with open(os.path.join(dstDir, 'data.grb'), 'wb') as grbOutFile:
+  for filename in os.listdir(dstDir):
+    if filename == 'data.grb':
+      continue
+
+    try:
+      im = PIL.Image.open(os.path.join(dstDir, filename))
+    except:
+      os.remove(os.path.join(dstDir, filename))
+      continue
+    if len(gifImgs) < 15:
+      gifImgs.append(im)
+    
+    frameCount += 1
+    print ('processing frame ' + str(frameCount))
+    byte_dat = im.tobytes("raw","RGB");
     for r, g, b in zip(*[iter(byte_dat)]*3):
-      fout.write(gamTable[g].to_bytes(1,'little'))
-      fout.write(gamTable[r].to_bytes(1,'little'))
-      fout.write(gamTable[b].to_bytes(1,'little'))
-  os.remove(os.path.join(dstDir, filename))
+      grbOutFile.write(gamTable[g].to_bytes(1,'little'))
+      grbOutFile.write(gamTable[r].to_bytes(1,'little'))
+      grbOutFile.write(gamTable[b].to_bytes(1,'little'))
+    os.remove(os.path.join(dstDir, filename))
 
 gifImgs[0].save(os.path.join(dstDir, 'pvw.gif'), save_all=True, append_images=gifImgs[1:], duration=40, loop=0)
 

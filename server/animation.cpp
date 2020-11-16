@@ -5,13 +5,20 @@
 #include "globals.h"
 
 struct AnimationInfo {
-  char name[MAX_FILE_NAME + 1] = ""; //name of the animation
-  uint16_t numFrames; //total number of frames
-  uint16_t frame; //current frame number
+  //char name[MAX_FILE_NAME + 1] = ""; //name of the animation
+  File videoData; //file containing the animation video data
 } animInfo;
 
 void anim__processRequest(AsyncWebServerRequest* request);
 String anim__templateProcessor(const String& var);
+void anim__setup(AsyncWebServer* server);
+void anim__updateFrame(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMethod<NeoGrbFeature>> neoPixFrameBuffer);
+
+OperatingMode AnimationOperatingMode = {
+  .setup = anim__setup,
+  { .prevPath = "" },
+  .updateFrame = anim__updateFrame,
+};
 
 void anim__setup(AsyncWebServer* server) {
   server->on("/action/animation", anim__processRequest);
@@ -22,55 +29,38 @@ void anim__setup(AsyncWebServer* server) {
 }
 void anim__updateFrame(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMethod<NeoGrbFeature>> neoPixFrameBuffer) {
   //WRITE_OUT("anim__updateFrame\n");
-  char fname[MAX_FILE_NAME + 1];
-  snprintf(fname, sizeof(fname), "/data/anim/%s/%i.grb", animInfo.name, animInfo.frame);
-
-  animInfo.frame++;
-  if (animInfo.frame > animInfo.numFrames) {
-    animInfo.frame = 1;
+  if (!animInfo.videoData.available()) { //reached end of file
+    animInfo.videoData.seek(0); //bring back to the beginning
   }
-
-  File imgFile = SDFS.open(fname, "r"); //open the image frame
-  if (!imgFile) {
-    WRITE_OUT("Failed to open");
-    WRITE_OUT(fname);
-    WRITE_OUT("\n");
-    return;
-  }
-  //There's some sort of issue going on when the website asynchronously tries to access the SD card
-  //at the same time as I'm accessing it. For now I've found that a work-around is to break down
-  //reading the file into smaller chunks. In the future if the issue is fixed in the (SD card?) library
-  //then it is better for performance to do a single call to readBytes.
-  //it appears that this may be a memory issue after all -- need to optimize usage!
-  //imgFile.read(currentFrameBuffer, BYTES_PER_PIX * PANEL_WIDTH * PANEL_HEIGHT); //copy GRB data to data buffer
-  uint8_t* ptrRead = currentFrameBuffer;
-  while (imgFile.available()) {
-    ptrRead += imgFile.read(ptrRead, 512); //read in standard block sizes
-  }
-  imgFile.close();
+  animInfo.videoData.read(currentFrameBuffer, BYTES_PER_PIX * PANEL_WIDTH * PANEL_HEIGHT); //copy GRB data to data buffer
 }
-OperatingMode AnimationOperatingMode = {
-  .setup = anim__setup,
-  { .prevPath = "" },
-  .updateFrame = anim__updateFrame,
-};
 void anim__processRequest(AsyncWebServerRequest* request) {
   if (!request->hasParam(F("animName"))) {
     return;
   }
-  snprintf(animInfo.name, sizeof(animInfo.name), request->getParam("animName")->value().c_str());
-  animInfo.frame = 1;
+  char animName[MAX_FILE_NAME] = 
+  snprintf(animName, sizeof(animInfo.name), request->getParam("animName")->value().c_str());
   char fname[MAX_FILE_NAME];
-  snprintf(fname, sizeof(fname), "/data/anim/%s/meta.json", animInfo.name);
-  File metadata = SDFS.open(fname, "r");
+  snprintf(fname, sizeof(fname), "/data/anim/%s/meta.json", animName);
+  File tmpFile = SDFS.open(fname, "r");
   StaticJsonDocument<128> metadataJSON;
-  if (!metadata || deserializeJson(metadataJSON, metadata)) {
+  if (!tmpFile || deserializeJson(metadataJSON, tmpFile)) {
     WRITE_OUT("Failed to open/deserialize animation metadata json file.\n");
     return;
   }
-  animInfo.numFrames = metadataJSON["frames"].as<int>();
+  //currently not doing anything with the number of frames since I can now just go based off of the
+  //data file size
+  //animInfo.numFrames = metadataJSON["frames"].as<int>();
   snprintf(AnimationOperatingMode.prevPath, sizeof(AnimationOperatingMode.prevPath), "/data/anim/%s/%s", animInfo.name, metadataJSON["prevName"].as<char*>());
-
+  tmpFile.close();
+  
+  snprintf(fname, sizeof(fname), "/data/anim/%s/data.grb", animName);
+  animInfo.videoData = SDFS.open(fname, "r");
+  if (!animInfo.videoData) {
+    WRITE_OUT("Failed to open animation data file.\n");
+    return;
+  }
+  
   CurrentOperatingMode = &AnimationOperatingMode;
   WRITE_OUT("Displaying animation!\n");
   request->redirect("/home.html");
