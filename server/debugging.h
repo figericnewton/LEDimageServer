@@ -8,7 +8,7 @@
 //#define DEBUG_MEMORY_ENABLED
 
 #ifdef DEBUG
-  #define WRITE_OUT(x) Serial.printf(x)
+  #define WRITE_OUT(x) Serial.print(x)
 #else
   #define WRITE_OUT(x)  
 #endif
