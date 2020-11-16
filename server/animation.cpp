@@ -30,13 +30,11 @@ void anim__updateFrame(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMe
     animInfo.frame = 1;
   }
 
-  WRITE_OUT("Opening ");
-  WRITE_OUT(fname);
   File imgFile = SDFS.open(fname, "r"); //open the image frame
-  if (imgFile) {
-    WRITE_OUT(" -- success\n");
-  } else {
-    WRITE_OUT(" -- FAILURE\n");
+  if (!imgFile) {
+    WRITE_OUT("Failed to open");
+    WRITE_OUT(fname);
+    WRITE_OUT("\n");
     return;
   }
   //There's some sort of issue going on when the website asynchronously tries to access the SD card
@@ -63,22 +61,16 @@ void anim__processRequest(AsyncWebServerRequest* request) {
   snprintf(animInfo.name, sizeof(animInfo.name), request->getParam("animName")->value().c_str());
   animInfo.frame = 1;
   char fname[MAX_FILE_NAME];
-  snprintf(fname, sizeof(fname), "/data/anim/%s/meta.txt", animInfo.name);
+  snprintf(fname, sizeof(fname), "/data/anim/%s/meta.json", animInfo.name);
   File metadata = SDFS.open(fname, "r");
-  char tmpRead[20]; //hardcode to 20bytes for now, if more is needed in future will have to update
-  long bytesRead;
-  while (metadata.available() && ((bytesRead = metadata.readBytesUntil(',', tmpRead, sizeof(tmpRead) - 1)) > 0)) {
-    tmpRead[bytesRead] = '\0'; //add null terminator
-    if (strcmp(tmpRead, "frames") == 0) {
-      bytesRead = metadata.readBytesUntil('\n', tmpRead, sizeof(tmpRead) - 1);
-      tmpRead[bytesRead] = '\0'; //add null terminator
-      animInfo.numFrames = atoi(tmpRead);
-    } else if (strcmp(tmpRead, "prevName") == 0) {
-      bytesRead = metadata.readBytesUntil('\n', tmpRead, sizeof(tmpRead) - 1);
-      tmpRead[bytesRead] = '\0'; //add null terminator
-      snprintf(AnimationOperatingMode.prevPath, sizeof(AnimationOperatingMode.prevPath), "/data/anim/%s/%s", animInfo.name, tmpRead);
-    }
+  StaticJsonDocument<128> metadataJSON;
+  if (!metadata || deserializeJson(metadataJSON, metadata)) {
+    WRITE_OUT("Failed to open/deserialize animation metadata json file.\n");
+    return;
   }
+  animInfo.numFrames = metadataJSON["frames"].as<int>();
+  snprintf(AnimationOperatingMode.prevPath, sizeof(AnimationOperatingMode.prevPath), "/data/anim/%s/%s", animInfo.name, metadataJSON["prevName"].as<char*>());
+
   CurrentOperatingMode = &AnimationOperatingMode;
   WRITE_OUT("Displaying animation!\n");
   request->redirect("/home.html");

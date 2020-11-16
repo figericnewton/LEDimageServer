@@ -6,6 +6,7 @@ import shutil
 import time
 import subprocess
 import PIL.Image
+import json
 from tkinter import *
 import tkinter, tkinter.filedialog
 
@@ -77,6 +78,9 @@ for filename in os.listdir(dstDir):
 
 gifImgs[0].save(os.path.join(dstDir, 'pvw.gif'), save_all=True, append_images=gifImgs[1:], duration=40, loop=0)
 
-with open(os.path.join(dstDir, 'meta.txt'), 'w+', newline='') as metafile:
-  metafile.write('frames,' + str(frameCount) + '\n')
-  metafile.write('prevName,pvw.gif\n')
+metadata = {}
+metadata['frames'] = frameCount
+metadata['prevName'] = 'pvw.gif'
+
+with open(os.path.join(dstDir, 'meta.json'), 'w+', newline='') as metafile:
+  json.dump(metadata, metafile, indent=2)
