@@ -9,6 +9,7 @@
 #include <ESP8266WiFi.h>
 #include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <ArduinoJson.h>
 
 #define PANEL_WIDTH 72
 #define PANEL_HEIGHT 36
