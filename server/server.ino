@@ -20,8 +20,7 @@ uint16_t MyLayoutMap(int16_t x, int16_t y) {
   return topo.MapProbe(x, y);
 }
 
-uint8_t currentFrameBuffer[BYTES_PER_PIX * PANEL_WIDTH * PANEL_HEIGHT];
-NeoBuffer<NeoBufferProgmemMethod<NeoGrbFeature>> neoPixFrameBuffer(PANEL_WIDTH, PANEL_HEIGHT, currentFrameBuffer);
+NeoBuffer<NeoBufferMethod<NeoGrbFeature>> neoPixFrameBuffer(PANEL_WIDTH, PANEL_HEIGHT, NULL);
 
 void setup() {
 #ifdef DEBUG
@@ -45,7 +44,7 @@ void setup() {
   startTimer();
 }
 void loop() {
-  CurrentOperatingMode->updateFrame(currentFrameBuffer, neoPixFrameBuffer);
+  CurrentOperatingMode->updateFrame(&neoPixFrameBuffer);
   neoPixFrameBuffer.Blt(topPixels, 0, 0, 0,                0, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
   neoPixFrameBuffer.Blt(midPixels, 0, 0, 0,   PANEL_HEIGHT/3, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
 #ifndef DEBUG

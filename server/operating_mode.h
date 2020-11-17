@@ -12,7 +12,7 @@ typedef struct OperatingMode_t {
   char prevPath[MAX_FILE_NAME + 1];
 
   //updates the frame and then returns a pointer to the neo buffer
-  void (*updateFrame)(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMethod<NeoGrbFeature>> neoPixFrameBuffer);
+  void (*updateFrame)(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer);
 } OperatingMode;
 
 extern OperatingMode *CurrentOperatingMode;

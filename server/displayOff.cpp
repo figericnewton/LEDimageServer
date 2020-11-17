@@ -7,9 +7,9 @@
 const RgbColor offColor(0);
 void off__setup(AsyncWebServer* server);
 void off__processRequest(AsyncWebServerRequest* request);
-void off__updateFrame(uint8_t* currentFrameBuffer, NeoBuffer<NeoBufferProgmemMethod<NeoGrbFeature>> neoPixFrameBuffer) {
+void off__updateFrame(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer) {
   //WRITE_OUT("off__updateFrame\n");
-  neoPixFrameBuffer.ClearTo(offColor);
+  neoPixFrameBuffer->ClearTo(offColor);
 }
 OperatingMode OffOperatingMode = {
   .setup = off__setup,
