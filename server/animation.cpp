@@ -39,7 +39,7 @@ void anim__processRequest(AsyncWebServerRequest* request) {
     return;
   }
   char animName[MAX_FILE_NAME] = 
-  snprintf(animName, sizeof(animInfo.name), request->getParam("animName")->value().c_str());
+  snprintf(animName, sizeof(animeName), request->getParam("animName")->value().c_str());
   char fname[MAX_FILE_NAME];
   snprintf(fname, sizeof(fname), "/data/anim/%s/meta.json", animName);
   File tmpFile = SDFS.open(fname, "r");
