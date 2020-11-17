@@ -51,7 +51,7 @@ void anim__processRequest(AsyncWebServerRequest* request) {
   //currently not doing anything with the number of frames since I can now just go based off of the
   //data file size
   //animInfo.numFrames = metadataJSON["frames"].as<int>();
-  snprintf(AnimationOperatingMode.prevPath, sizeof(AnimationOperatingMode.prevPath), "/data/anim/%s/%s", animInfo.name, metadataJSON["prevName"].as<char*>());
+  snprintf(AnimationOperatingMode.prevPath, sizeof(AnimationOperatingMode.prevPath), "/data/anim/%s/%s", animName, metadataJSON["prevName"].as<char*>());
   tmpFile.close();
   
   snprintf(fname, sizeof(fname), "/data/anim/%s/data.grb", animName);
