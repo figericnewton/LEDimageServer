@@ -26,9 +26,9 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <!-- <a href="/text_display.html" class="w3-bar-item w3-button w3-padding"> Display Text</a> -->
     <!-- <a href="/select_image.html" class="w3-bar-item w3-button w3-padding"> Image Selection</a> -->
     <!-- <a href="/upload_image.html" class="w3-bar-item w3-button w3-padding"> Upload Image</a> -->
-    <a href="/select_animation.html" class="w3-bar-item w3-button w3-padding w3-blue"> Animation Selection</a>
+    <a href="/select_animation.html" class="w3-bar-item w3-button w3-padding"> Animation Selection</a>
     <!-- <a href="/upload_animation.html" class="w3-bar-item w3-button w3-padding"> Upload Animation</a> -->
-    <a href="/pong.html" class="w3-bar-item w3-button w3-padding"> Pong Game</a>
+    <a href="/pong.html" class="w3-bar-item w3-button w3-padding w3-blue"> Pong Game</a>
     <br><br>
   </div>
 </nav>
@@ -39,11 +39,22 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 <!-- !PAGE CONTENT! -->
 <div class="w3-main" style="margin-left:300px;margin-top:43px;">
 
+  <form class="w3-container w3-card-4" id="playerForm">
+    <h2>Player Selection</h2>
+    <p>
+    <input class="w3-radio" type="radio" name="player" value="0">
+    <label>Player One</label></p>
+    <p>
+    <input class="w3-radio" type="radio" name="player" value="1">
+    <label>Player Two</label></p>
+    <p>
+    <input class="w3-radio" type="radio" name="player" value="-1" checked>
+    <label>Observer</label></p>
+  </form>
+
   <div class="w3-container">
-    <h2>Select an animation to display!</h2>
-  </div>
-  <div class="w3-container">
-%ANIMATION_PREVIEW_CONTENTS%
+    <p><button class="w3-button w3-block w3-jumbo w3-padding-large w3-blue" onmousedown="sendMessage(-1)" ontouchstart="sendMessage(-1)" onmouseup="sendMessage(0)" ontouchend="sendMessage(0)" id="upButton" disabled>UP</button></p>
+    <p><button class="w3-button w3-block w3-jumbo w3-padding-large w3-blue" onmousedown="sendMessage(1)" ontouchstart="sendMessage(1)" onmouseup="sendMessage(0)" ontouchend="sendMessage(0)" id="downButton" disabled>DOWN</button></p>
   </div>
   
   <!-- Footer -->
@@ -78,6 +89,63 @@ function w3_close() {
   navBar.style.display = "none";
   navBarOverlay.style.display = "none";
 }
+
+
+var upButton = document.getElementById("upButton");
+var downButton = document.getElementById("downButton");
+var playerRadioButtons = document.forms['playerForm'].elements['player'];
+var currentPlayer;
+
+for (var i=0; i<playerRadioButtons.length; i++) {
+  playerRadioButtons[i].onchange = function() {
+    currentPlayer = parseInt(this.value);
+    console.log("Current player switched to " + currentPlayer);
+    if (currentPlayer == -1) { //observer selected
+      upButton.disabled = true;
+      downButton.disabled = true;
+    } else {
+      upButton.disabled = false;
+      downButton.disabled = false;
+    }
+  };
+}
+
+//Note for the future that I can actually use disabled to eliminate player options if desired
+var socket = new WebSocket("ws://192.168.1.11/pong");
+socket.onopen = function(event) {
+   console.log("Connection established");
+}
+socket.onmessage = function(str) {
+  console.log("Received message: ", str);
+};
+function sendMessage(demand) {
+  socket.send(JSON.stringify({
+    player: currentPlayer,
+    demand: demand
+  }));
+}
+<!-- upButton.onmousedown = "" -->
+ <!-- function() { -->
+  <!-- sendMessage(-1); -->
+<!-- } -->
+<!-- upButton.onmouseup = function() { -->
+  <!-- socket.send(JSON.stringify({ -->
+    <!-- player: currentPlayer, -->
+    <!-- demand: 0 -->
+  <!-- })); -->
+<!-- } -->
+<!-- downButton.onmousedown = function() { -->
+  <!-- socket.send(JSON.stringify({ -->
+    <!-- player: currentPlayer, -->
+    <!-- demand: 1 -->
+  <!-- })); -->
+<!-- } -->
+<!-- downButton.onmouseup = function() { -->
+  <!-- socket.send(JSON.stringify({ -->
+    <!-- player: currentPlayer, -->
+    <!-- demand: 0 -->
+  <!-- })); -->
+<!-- } -->
 
 </script>
 
