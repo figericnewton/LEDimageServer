@@ -4,9 +4,10 @@
 
 #include "globals.h"
 
-#define BALL_TAIL_SIZE 5
+#define BALL_TAIL_SIZE 10
 #define PADDLE_HEIGHT 6
 #define ACCEL_RATE 1
+#define MAX_PADDLE_SPEED 3
 
 void pong__setup(AsyncWebServer* server);
 void pong__processRequest(AsyncWebServerRequest* request);
@@ -15,10 +16,12 @@ void pong__updateFrame(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuf
 void pong__beginGame();
 void pong__drawBoard(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer);
 
-const RgbColor Blue(0, 0, 120); //blue
+//FIXME: these probably shouldn't be defined in this CPP file and instead should be shared
+NeoGamma<NeoGammaTableMethod> colorGamma;
+const RgbColor BallColor(0, 0, 120); //blue
 const RgbColor White(120, 120, 120); //white
-const RgbColor Green(0, 120, 0);
-const RgbColor Black(0);
+const RgbColor PaddleColor(0, 120, 0); //green
+const RgbColor OffColor(0);
 
 OperatingMode PongOperatingMode = {
   .setup = pong__setup,
@@ -32,6 +35,7 @@ struct GameStateInfo {
   int PY[2], PVY[2]; //position and velocity of the two players
   int BVX, BVY; //ball velocity components
   int BX[BALL_TAIL_SIZE], BY[BALL_TAIL_SIZE]; //position history for ball
+  int gameOver;
 } gameStateInfo;
 
 void pong__drawBoard(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer) {
@@ -48,35 +52,37 @@ void pong__drawBoard(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffe
     x = i*(PANEL_WIDTH - 1);
     for (y = 0; y < PANEL_HEIGHT; y++) {
       if ( y >= gameStateInfo.PY[i] && y < gameStateInfo.PY[i] + PADDLE_HEIGHT ) {
-        neoPixFrameBuffer->SetPixelColor(x, y, Green);
+        neoPixFrameBuffer->SetPixelColor(x, y, PaddleColor);
       } else {
-        neoPixFrameBuffer->SetPixelColor(x, y, Black);
+        neoPixFrameBuffer->SetPixelColor(x, y, OffColor);
       }
     }
   }
-/*
   //then draw the ball/history
+  RgbColor newColor;
   for (hist = 0; hist < BALL_TAIL_SIZE; hist++) {
-    //FIXME: set the color in a fading fashion!
+    newColor = colorGamma.Correct(RgbColor::LinearBlend(
+        OffColor,
+        BallColor,
+        hist*1.0/(BALL_TAIL_SIZE - 1)));
     for (x = 0; x < 4; x++) {
       for (y = 0; y < 4; y++) {
-        if ( (ballPattern) & (1 << (x+y)) != 0 ) { //The bit in our 16 bit pattern is true
-          neoPixFrameBuffer->SetPixelColor(gameStateInfo.BX[hist] + x, gameStateInfo.BY[hist] + y, Blue);
+        if ( ((ballPattern) & (1 << (x+y))) != 0 ) { //The bit in our 16 bit pattern is true
+          neoPixFrameBuffer->SetPixelColor(gameStateInfo.BX[hist] + x, gameStateInfo.BY[hist] + y, newColor);
         }
       }
     }
   }
-*/
 }
 void pong__updateGameStateInfo() {
   //if demand is < 0 then paddle will accelerate upwards
   //if demand is = 0 then paddle will decelerate
   //if demand is > 0 then paddle will accelerate downards
-  WRITE_OUT("gameStateInfo.PVY[0]: ");
-  WRITE_OUT(gameStateInfo.PVY[0]);
-  WRITE_OUT("\ngameStateInfo.PY[0]: ");
-  WRITE_OUT(gameStateInfo.PY[0]);
-  WRITE_OUT("\n\n");
+  //WRITE_OUT("gameStateInfo.PVY[0]: ");
+  //WRITE_OUT(gameStateInfo.PVY[0]);
+  //WRITE_OUT("\ngameStateInfo.PY[0]: ");
+  //WRITE_OUT(gameStateInfo.PY[0]);
+  //WRITE_OUT("\n\n");
   for (int i = 0; i < 2; i++) {
     //STEP 1: Accelerate the paddles
     if (gameStateInfo.demand[i] < 0) {
@@ -90,7 +96,11 @@ void pong__updateGameStateInfo() {
     } else { //gameStateInfo.demand[i] > 0
       gameStateInfo.PVY[i] += ACCEL_RATE;
     }
-    //FIXME: should I impose a maximum paddle velocity?
+    if ( gameStateInfo.PVY[i] > MAX_PADDLE_SPEED ) {
+      gameStateInfo.PVY[i] = MAX_PADDLE_SPEED;
+    } else if ( gameStateInfo.PVY[i] < -MAX_PADDLE_SPEED ) {
+      gameStateInfo.PVY[i] = -MAX_PADDLE_SPEED;
+    }
     //STEP 2: Calculate the new paddle positions
     gameStateInfo.PY[i] += gameStateInfo.PVY[i];
     if (gameStateInfo.PY[i] <= 0) { //up against wall
@@ -102,11 +112,49 @@ void pong__updateGameStateInfo() {
     }
   }
   //STEP 3: Calculate the new ball position
+  for (int i = 0; i < BALL_TAIL_SIZE - 1; i++) {
+    gameStateInfo.BX[i] = gameStateInfo.BX[i+1];
+    gameStateInfo.BY[i] = gameStateInfo.BY[i+1];
+  }
+  gameStateInfo.BX[BALL_TAIL_SIZE - 1] += gameStateInfo.BVX;
+  gameStateInfo.BY[BALL_TAIL_SIZE - 1] += gameStateInfo.BVY;
+
+  //check/correct for top and bottom wall collisions
+  if (gameStateInfo.BY[BALL_TAIL_SIZE - 1] <= 0) {
+    gameStateInfo.BVY *= -1;
+    gameStateInfo.BY[BALL_TAIL_SIZE - 1] -= gameStateInfo.BY[BALL_TAIL_SIZE - 1] - 0;
+  } else if (gameStateInfo.BY[BALL_TAIL_SIZE - 1] >= PANEL_HEIGHT - 4) {
+    gameStateInfo.BVY *= -1;
+    gameStateInfo.BY[BALL_TAIL_SIZE - 1] -= gameStateInfo.BY[BALL_TAIL_SIZE - 1] - (PANEL_HEIGHT - 4);
+  }
+  
+  if (gameStateInfo.BX[BALL_TAIL_SIZE - 1] == 0 || gameStateInfo.BX[BALL_TAIL_SIZE - 1] == PANEL_WIDTH - 4) {
+    gameStateInfo.gameOver = 1;
+    return;
+  }
+  //check/correct for left and right paddle or game over
+  for (int i = 0; i < 2; i++) {
+    if (gameStateInfo.BX[BALL_TAIL_SIZE - 1] == i*(PANEL_WIDTH - 4)) { //on the side, do we collide with paddle?
+      if ( gameStateInfo.BY[BALL_TAIL_SIZE - 1] >= gameStateInfo.PY[i] - 3 && gameStateInfo.BY[BALL_TAIL_SIZE - 1] <= gameStateInfo.PY[i] + PADDLE_HEIGHT - 1) {
+        gameStateInfo.BVX *= -1; //flip the direction
+        gameStateInfo.BVY += gameStateInfo.PVY[i]; //add the paddle's velocity
+      }
+    }
+  }
+  
 }
 void pong__updateFrame(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer) {
   //WRITE_OUT("pong__updateFrame\n");
-  pong__updateGameStateInfo();
-  pong__drawBoard(neoPixFrameBuffer);
+  if (gameStateInfo.gameOver > 0) {
+    gameStateInfo.gameOver++;
+    if (gameStateInfo.gameOver > 30*5) { //start a new game
+      pong__beginGame();
+      neoPixFrameBuffer->ClearTo(OffColor);
+    }
+  } else {
+    pong__updateGameStateInfo();
+    pong__drawBoard(neoPixFrameBuffer);
+  }
   pong__ws.cleanupClients();
 }
 void pong__setup(AsyncWebServer* server) {
@@ -115,6 +163,7 @@ void pong__setup(AsyncWebServer* server) {
   server->serveStatic("/pong.html", SDFS, "/web/pong.html");
 }
 void pong__beginGame() {
+  gameStateInfo.gameOver = 0;
   for (int pnum = 0; pnum < 2; pnum++) {
     gameStateInfo.demand[pnum] = 0; //start out with no position demand
     gameStateInfo.PY[pnum] = PANEL_HEIGHT/2 - PADDLE_HEIGHT/2;
