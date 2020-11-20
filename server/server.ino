@@ -45,6 +45,7 @@ void setup() {
 }
 void loop() {
   CurrentOperatingMode->updateFrame(&neoPixFrameBuffer);
+  video__streamToClients(&neoPixFrameBuffer);
   neoPixFrameBuffer.Blt(topPixels, 0, 0, 0,                0, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
   neoPixFrameBuffer.Blt(midPixels, 0, 0, 0,   PANEL_HEIGHT/3, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
 #ifndef DEBUG

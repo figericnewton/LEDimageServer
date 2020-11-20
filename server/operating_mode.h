@@ -19,5 +19,6 @@ extern OperatingMode *CurrentOperatingMode;
 
 void setupAllOperatingModes(AsyncWebServer* server);
 //void setCurrentOperatingMode(OperatingMode newMode);
+void video__streamToClients(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer);
 
 #endif

@@ -128,20 +128,18 @@ void pong__updateGameStateInfo() {
     gameStateInfo.BY[BALL_TAIL_SIZE - 1] -= gameStateInfo.BY[BALL_TAIL_SIZE - 1] - (PANEL_HEIGHT - 4);
   }
   
-  if (gameStateInfo.BX[BALL_TAIL_SIZE - 1] == 0 || gameStateInfo.BX[BALL_TAIL_SIZE - 1] == PANEL_WIDTH - 4) {
-    gameStateInfo.gameOver = 1;
-    return;
-  }
   //check/correct for left and right paddle or game over
   for (int i = 0; i < 2; i++) {
     if (gameStateInfo.BX[BALL_TAIL_SIZE - 1] == i*(PANEL_WIDTH - 4)) { //on the side, do we collide with paddle?
       if ( gameStateInfo.BY[BALL_TAIL_SIZE - 1] >= gameStateInfo.PY[i] - 3 && gameStateInfo.BY[BALL_TAIL_SIZE - 1] <= gameStateInfo.PY[i] + PADDLE_HEIGHT - 1) {
         gameStateInfo.BVX *= -1; //flip the direction
         gameStateInfo.BVY += gameStateInfo.PVY[i]; //add the paddle's velocity
+        gameStateInfo.BX[BALL_TAIL_SIZE - 1] += 2*gameStateInfo.BVX; //visually the collision happened last round
+      } else {
+        gameStateInfo.gameOver = 1;
       }
     }
   }
-  
 }
 void pong__updateFrame(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer) {
   //WRITE_OUT("pong__updateFrame\n");

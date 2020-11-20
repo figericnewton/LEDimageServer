@@ -33,7 +33,6 @@ void anim__updateFrame(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuf
     animInfo.videoData.seek(0); //bring back to the beginning
   }
   NeoBufferContext<NeoGrbFeature> ctx = *neoPixFrameBuffer;
-  uint8_t* pixPtr = ctx.Pixels;
   animInfo.videoData.read(ctx.Pixels, ctx.SizePixels); //copy GRB data to data buffer
 }
 void anim__processRequest(AsyncWebServerRequest* request) {
