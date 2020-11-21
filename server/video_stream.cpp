@@ -52,7 +52,7 @@ void video__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsE
       memcpy(&frameBufferCTX.Pixels[info->index], data, len);
       if (info->index + len == info->len) {
         WRITE_OUT("requesting more data\n");
-        client->binary("more plzzzz"); //request the next frame!
+        client->binary("OK"); //request the next frame!
       }
     } else { //we're expected to send the client data
       WRITE_OUT("SENDING TO CLIENT\n");
