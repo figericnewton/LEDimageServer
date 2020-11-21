@@ -39,14 +39,21 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 <!-- !PAGE CONTENT! -->
 <div class="w3-main" style="margin-left:300px;margin-top:43px;">
 
+  <form class="w3-container w3-card-4" id="recvForm">
+    <h2>Video Streaming Selection</h2>
+    <p>
+    <input class="w3-radio" type="radio" name="recvmode" value="1" checked>
+    <label>Receive live feed of LED server</label></p>
+    <p>
+    <input class="w3-radio" type="radio" name="recvmode" value="0">
+    <label>Send video stream to the LED display</label></p>
+    <p>
+  </form>
   <div class="w3-container">
-    <h2>Live stream from your webcamera being sent to the LED pixels</h2>
+    <canvas id="Canvas" width="72" height="36" style="width:100%"></canvas>
   </div>
   <div hidden class="w3-container">
     <video autoplay="true" id="SourceVideo"></video>
-  </div>
-  <div class="w3-container">
-    <canvas id="Canvas" width="72" height="36" style="width:100%"></canvas>
   </div>
   
   <!-- Footer -->
@@ -84,51 +91,69 @@ function w3_close() {
 
 var canvas = document.getElementById('Canvas');
 var video = document.getElementById('SourceVideo');
+var radioButtons = document.forms['recvForm'].elements['recvmode'];
+var recvmode = true, recvmodeLastMsg = true;
+for (var i=0; i<radioButtons.length; i++) {
+  radioButtons[i].onchange = function() {
+    recvmode = this.value == "1";
+    console.log("recvmode switched to " + recvmode);
+  };
+}
 
-//Note for the future that I can actually use disabled to eliminate player options if desired
 var socket = new WebSocket("ws://192.168.1.11/video");
 socket.binaryType = 'arraybuffer';
 socket.onopen = function(event) {
   console.log("Connection established");
+  socket.send(1); //ask server for data
 }
 socket.onmessage = function(message) {
   console.log("received message");
-  var grbPixData = new Uint8Array(message.data);
-  var imgData = canvas.getContext("2d").createImageData(canvas.width, canvas.height);
+  var imgData = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height);
   var imgPixels = imgData.data;
-  //var imgPixels = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height);
-  for (var i = 0; i < canvas.width*canvas.height; i++) {
-    imgPixels[4*i+0] = grbPixData[3*i+1]; //RED
-    imgPixels[4*i+1] = grbPixData[3*i+0]; //GREEN
-    imgPixels[4*i+2] = grbPixData[3*i+2]; //BLUE
-    imgPixels[4*i+3] = 255; //ALPHA CHANNEL
+  var grbPixData;
+  if (recvmode && recvmodeLastMsg) { //server sent us the data we asked for
+    grbPixData = new Uint8Array(message.data);
+    for (var i = 0; i < grbPixData.length; i++) {
+      imgPixels[4*i+0] = grbPixData[3*i+1]; //RED
+      imgPixels[4*i+1] = grbPixData[3*i+0]; //GREEN
+      imgPixels[4*i+2] = grbPixData[3*i+2]; //BLUE
+      imgPixels[4*i+3] = 255;               //ALPHA
+    }
+    canvas.getContext("2d").putImageData(imgData, 0, 0);
   }
-  canvas.getContext("2d").putImageData(imgData, 0, 0);
+  recvmodeLastMsg = recvmode;
+  var response;
+  if (recvmode) {
+    response = new Uint8Array(1);
+  } else { //send the server data
+    response = new Uint8Array(3*canvas.width*canvas.height);
+    for (var i = 0; i < response.length; i++) {
+      response[3*i+0] = imgPixels[4*i+1]; //GREEN
+      response[3*i+1] = imgPixels[4*i+0]; //RED
+      response[3*i+2] = imgPixels[4*i+2]; //BLUE
+    }
+  }
+  socket.send(response);
 };
-<!-- function sendMessage(demand) { -->
-  <!-- socket.send(JSON.stringify({ -->
-    <!-- player: currentPlayer, -->
-    <!-- demand: demand -->
-  <!-- })); -->
-<!-- } -->
 
-<!-- function drawFrame() { -->
-  <!-- canvas.getContext("2d").drawImage(video, 0, 0, video.videoWidth, video.videoHeight, -->
-                                           <!-- 0, 0, canvas.width, canvas.height); -->
-  <!-- imgPixels = canvas.getContext("2d").getImageData(); -->
-  <!-- setTimeout(function () { -->
-    <!-- drawFrame(video); -->
-  <!-- }, 10); -->
-<!-- } -->
+function drawFrame() {
+  if (!recvmode) { //don't copy video to canvas when we're in receive mode
+    canvas.getContext("2d").drawImage(video, 0, 0, video.videoWidth, video.videoHeight,
+                                             0, 0, canvas.width, canvas.height);
+  }
+  setTimeout(function () {
+    drawFrame(video);
+  }, 10);
+}
 
-<!-- video.addEventListener('canplay', drawFrame); -->
-<!-- if (navigator.mediaDevices.getUserMedia) { -->
-  <!-- navigator.mediaDevices.getUserMedia({video: true, audio: false}) -->
-    <!-- .then(function (stream) { -->
-      <!-- video.srcObject = stream; -->
-    <!-- }) -->
-    <!-- .catch(console.error); -->
-<!-- } -->
+video.addEventListener('canplay', drawFrame);
+if (navigator.mediaDevices.getUserMedia) {
+  navigator.mediaDevices.getUserMedia({video: true, audio: false})
+    .then(function (stream) {
+      video.srcObject = stream;
+    })
+    .catch(console.error);
+}
 
 </script>
 

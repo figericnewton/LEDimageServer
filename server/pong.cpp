@@ -12,9 +12,9 @@
 void pong__setup(AsyncWebServer* server);
 void pong__processRequest(AsyncWebServerRequest* request);
 void pong__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
-void pong__updateFrame(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer);
+void pong__updateFrame();
 void pong__beginGame();
-void pong__drawBoard(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer);
+void pong__drawBoard();
 
 //FIXME: these probably shouldn't be defined in this CPP file and instead should be shared
 NeoGamma<NeoGammaTableMethod> colorGamma;
@@ -38,7 +38,7 @@ struct GameStateInfo {
   int gameOver;
 } gameStateInfo;
 
-void pong__drawBoard(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer) {
+void pong__drawBoard() {
   const uint16_t ballPattern = 0x6FF6;
   //pattern for ball is as follows, x, y give position of upper left corner in the 4x4 square
   //0110
@@ -52,9 +52,9 @@ void pong__drawBoard(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffe
     x = i*(PANEL_WIDTH - 1);
     for (y = 0; y < PANEL_HEIGHT; y++) {
       if ( y >= gameStateInfo.PY[i] && y < gameStateInfo.PY[i] + PADDLE_HEIGHT ) {
-        neoPixFrameBuffer->SetPixelColor(x, y, PaddleColor);
+        neoPixFrameBuffer.SetPixelColor(x, y, PaddleColor);
       } else {
-        neoPixFrameBuffer->SetPixelColor(x, y, OffColor);
+        neoPixFrameBuffer.SetPixelColor(x, y, OffColor);
       }
     }
   }
@@ -68,7 +68,7 @@ void pong__drawBoard(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffe
     for (x = 0; x < 4; x++) {
       for (y = 0; y < 4; y++) {
         if ( ((ballPattern) & (1 << (x+y))) != 0 ) { //The bit in our 16 bit pattern is true
-          neoPixFrameBuffer->SetPixelColor(gameStateInfo.BX[hist] + x, gameStateInfo.BY[hist] + y, newColor);
+          neoPixFrameBuffer.SetPixelColor(gameStateInfo.BX[hist] + x, gameStateInfo.BY[hist] + y, newColor);
         }
       }
     }
@@ -141,17 +141,17 @@ void pong__updateGameStateInfo() {
     }
   }
 }
-void pong__updateFrame(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer) {
+void pong__updateFrame() {
   //WRITE_OUT("pong__updateFrame\n");
   if (gameStateInfo.gameOver > 0) {
     gameStateInfo.gameOver++;
     if (gameStateInfo.gameOver > 30*5) { //start a new game
       pong__beginGame();
-      neoPixFrameBuffer->ClearTo(OffColor);
+      neoPixFrameBuffer.ClearTo(OffColor);
     }
   } else {
     pong__updateGameStateInfo();
-    pong__drawBoard(neoPixFrameBuffer);
+    pong__drawBoard();
   }
   pong__ws.cleanupClients();
 }

@@ -12,7 +12,7 @@ struct AnimationInfo {
 void anim__processRequest(AsyncWebServerRequest* request);
 String anim__templateProcessor(const String& var);
 void anim__setup(AsyncWebServer* server);
-void anim__updateFrame(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer);
+void anim__updateFrame();
 
 OperatingMode AnimationOperatingMode = {
   .setup = anim__setup,
@@ -27,13 +27,12 @@ void anim__setup(AsyncWebServer* server) {
     .setTemplateProcessor(anim__templateProcessor)
     .setCacheControl("max-age=30");
 }
-void anim__updateFrame(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer) {
+void anim__updateFrame() {
   //WRITE_OUT("anim__updateFrame\n");
   if (!animInfo.videoData.available()) { //reached end of file
     animInfo.videoData.seek(0); //bring back to the beginning
   }
-  NeoBufferContext<NeoGrbFeature> ctx = *neoPixFrameBuffer;
-  animInfo.videoData.read(ctx.Pixels, ctx.SizePixels); //copy GRB data to data buffer
+  animInfo.videoData.read(frameBufferCTX.Pixels, frameBufferCTX.SizePixels); //copy GRB data to data buffer
 }
 void anim__processRequest(AsyncWebServerRequest* request) {
   if (!request->hasParam(F("animName"))) {

@@ -11,14 +11,12 @@ typedef struct OperatingMode_t {
 
   char prevPath[MAX_FILE_NAME + 1];
 
-  //updates the frame and then returns a pointer to the neo buffer
-  void (*updateFrame)(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer);
+  void (*updateFrame)();
 } OperatingMode;
 
 extern OperatingMode *CurrentOperatingMode;
 
 void setupAllOperatingModes(AsyncWebServer* server);
 //void setCurrentOperatingMode(OperatingMode newMode);
-void video__streamToClients(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer);
 
 #endif

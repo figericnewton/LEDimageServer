@@ -21,6 +21,7 @@ uint16_t MyLayoutMap(int16_t x, int16_t y) {
 }
 
 NeoBuffer<NeoBufferMethod<NeoGrbFeature>> neoPixFrameBuffer(PANEL_WIDTH, PANEL_HEIGHT, NULL);
+NeoBufferContext<NeoGrbFeature> frameBufferCTX = neoPixFrameBuffer;
 
 void setup() {
 #ifdef DEBUG
@@ -44,8 +45,7 @@ void setup() {
   startTimer();
 }
 void loop() {
-  CurrentOperatingMode->updateFrame(&neoPixFrameBuffer);
-  video__streamToClients(&neoPixFrameBuffer);
+  CurrentOperatingMode->updateFrame();
   neoPixFrameBuffer.Blt(topPixels, 0, 0, 0,                0, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
   neoPixFrameBuffer.Blt(midPixels, 0, 0, 0,   PANEL_HEIGHT/3, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
 #ifndef DEBUG

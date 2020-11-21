@@ -7,7 +7,7 @@
 void video__setup(AsyncWebServer* server);
 void video__processRequest(AsyncWebServerRequest* request);
 void video__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
-void video__updateFrame(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer);
+void video__updateFrame();
 
 OperatingMode VideoOperatingMode = {
   .setup = video__setup,
@@ -17,19 +17,8 @@ OperatingMode VideoOperatingMode = {
 
 AsyncWebSocket video__ws("/video");
 
-void video__updateFrame(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer) {
-  //WRITE_OUT("video__updateFrame\n");
-  //FIXME
-}
-int skipCount = 0;
-AsyncWebSocketClient *activeClient = NULL;
-void video__streamToClients(NeoBuffer<NeoBufferMethod<NeoGrbFeature>> *neoPixFrameBuffer) {
-  video__ws.cleanupClients();
-  if (skipCount++ < 5 || !activeClient) { return; } //try slowing down the send rate a lot
-  skipCount = 0;
-  WRITE_OUT("Sending pixel data?\n");
-  NeoBufferContext<NeoGrbFeature> ctx = *neoPixFrameBuffer;
-  activeClient->binary(ctx.Pixels, ctx.SizePixels);
+void video__updateFrame() {
+  video__ws.cleanupClients(1); //ONLY ONE CLIENT AT A TIME CAN STREAM!!!
 }
 void video__setup(AsyncWebServer* server) {
   video__ws.onEvent(video__wsEvent);
@@ -43,34 +32,32 @@ void video__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsE
     WRITE_OUT("][");
     WRITE_OUT(client->id());
     WRITE_OUT("] connect\n");
-    activeClient = client;
   } else if(type == WS_EVT_DISCONNECT) {
-    activeClient = NULL;
     WRITE_OUT("ws[");
     WRITE_OUT(server->url());
     WRITE_OUT("][");
     WRITE_OUT(client->id());
     WRITE_OUT("] disconnect\n");
   } else if (type == WS_EVT_DATA) {
-    // AwsFrameInfo * info = (AwsFrameInfo*)arg;
-    // StaticJsonDocument<256> msgJSON;
-    // if (info->final && info->index == 0 && info->len == len) {
-      // //the whole message is in a single frame and we got all of its data
-      // WRITE_OUT("ws[");
-      // WRITE_OUT(server->url());
-      // WRITE_OUT("][");
-      // WRITE_OUT(client->id());
-      // WRITE_OUT("] received:\n");
-      // for(size_t i=0; i < info->len; i++) {
-        // WRITE_OUT((char) data[i]);
-      // }
-      // WRITE_OUT("\n");
-      // if (deserializeJson(msgJSON, data)) {
-        // WRITE_OUT("Failed to deserialize client message!\n");
-        // return;
-      // }
-      // gameStateInfo.demand[msgJSON["player"].as<int>()] = msgJSON["demand"].as<int>();
-    // }
+    AwsFrameInfo * info = (AwsFrameInfo*)arg;
+    if (info->len == frameBufferCTX.SizePixels) { //client is sending us the video data
+      if ( CurrentOperatingMode != &VideoOperatingMode ) {
+        CurrentOperatingMode = &VideoOperatingMode;
+      }
+      WRITE_OUT("RECEIVED (");
+      WRITE_OUT((const int)(info->index + len));
+      WRITE_OUT("/");
+      WRITE_OUT((const int)info->len);
+      WRITE_OUT(")\n");
+      memcpy(&frameBufferCTX.Pixels[info->index], data, len);
+      if (info->index + len == info->len) {
+        WRITE_OUT("requesting more data\n");
+        client->binary("more plzzzz"); //request the next frame!
+      }
+    } else { //we're expected to send the client data
+      WRITE_OUT("SENDING TO CLIENT\n");
+      client->binary(frameBufferCTX.Pixels, frameBufferCTX.SizePixels);
+    }
   } else {
     WRITE_OUT("ws[");
     WRITE_OUT(server->url());

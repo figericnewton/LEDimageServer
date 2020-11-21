@@ -18,6 +18,9 @@
 //SPIFFS and LittleFS limit to 31 characters in a file name (32 including \0)
 #define MAX_FILE_NAME 31
 
+extern NeoBuffer<NeoBufferMethod<NeoGrbFeature>> neoPixFrameBuffer;
+extern NeoBufferContext<NeoGrbFeature> frameBufferCTX;
+
 #include "debugging.h"
 #include "operating_mode.h"
 

@@ -3,7 +3,7 @@
 #define DEBUGGING_H
 
 //uncomment as desired when debugging
-#define DEBUG
+//#define DEBUG
 //#define DEBUG_TIMER_ENABLED
 //#define DEBUG_MEMORY_ENABLED
 
