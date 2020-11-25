@@ -67,7 +67,7 @@ void pong__drawBoard() {
         hist*1.0/(BALL_TAIL_SIZE - 1)));
     for (x = 0; x < 4; x++) {
       for (y = 0; y < 4; y++) {
-        if ( ((ballPattern) & (1 << (x+y))) != 0 ) { //The bit in our 16 bit pattern is true
+        if ( ((ballPattern) & (1 << (4*x+y))) != 0 ) { //The bit in our 16 bit pattern is true
           neoPixFrameBuffer.SetPixelColor(gameStateInfo.BX[hist] + x, gameStateInfo.BY[hist] + y, newColor);
         }
       }
