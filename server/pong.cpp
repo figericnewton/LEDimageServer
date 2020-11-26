@@ -5,9 +5,8 @@
 #include "globals.h"
 
 #define BALL_TAIL_SIZE 10
-#define PADDLE_HEIGHT 6
-#define ACCEL_RATE 1
-#define MAX_PADDLE_SPEED 3
+#define PADDLE_HEIGHT 8
+#define MAX_BALL_SPEED 3
 
 void pong__setup(AsyncWebServer* server);
 void pong__processRequest(AsyncWebServerRequest* request);
@@ -16,10 +15,9 @@ void pong__updateFrame();
 void pong__beginGame();
 void pong__drawBoard();
 
-//FIXME: these probably shouldn't be defined in this CPP file and instead should be shared
+//FIXME: these probably shouldn't be defined in this CPP file and instead should be shared?
 NeoGamma<NeoGammaTableMethod> colorGamma;
 const RgbColor BallColor(0, 0, 120); //blue
-const RgbColor White(120, 120, 120); //white
 const RgbColor PaddleColor(0, 120, 0); //green
 const RgbColor OffColor(0);
 
@@ -75,43 +73,16 @@ void pong__drawBoard() {
   }
 }
 void pong__updateGameStateInfo() {
-  //if demand is < 0 then paddle will accelerate upwards
-  //if demand is = 0 then paddle will decelerate
-  //if demand is > 0 then paddle will accelerate downards
-  //WRITE_OUT("gameStateInfo.PVY[0]: ");
-  //WRITE_OUT(gameStateInfo.PVY[0]);
-  //WRITE_OUT("\ngameStateInfo.PY[0]: ");
-  //WRITE_OUT(gameStateInfo.PY[0]);
-  //WRITE_OUT("\n\n");
   for (int i = 0; i < 2; i++) {
-    //STEP 1: Accelerate the paddles
-    if (gameStateInfo.demand[i] < 0) {
-      gameStateInfo.PVY[i] -= ACCEL_RATE;
-    } else if (gameStateInfo.demand[i] == 0) {
-      if (gameStateInfo.PVY[i] > 0) {
-        gameStateInfo.PVY[i] -= ACCEL_RATE;
-      } else if (gameStateInfo.PVY[i] < 0) {
-        gameStateInfo.PVY[i] += ACCEL_RATE;
-      }
-    } else { //gameStateInfo.demand[i] > 0
-      gameStateInfo.PVY[i] += ACCEL_RATE;
-    }
-    if ( gameStateInfo.PVY[i] > MAX_PADDLE_SPEED ) {
-      gameStateInfo.PVY[i] = MAX_PADDLE_SPEED;
-    } else if ( gameStateInfo.PVY[i] < -MAX_PADDLE_SPEED ) {
-      gameStateInfo.PVY[i] = -MAX_PADDLE_SPEED;
-    }
-    //STEP 2: Calculate the new paddle positions
-    gameStateInfo.PY[i] += gameStateInfo.PVY[i];
+    gameStateInfo.PVY[i] = gameStateInfo.demand[i] - gameStateInfo.PY[i];
+    gameStateInfo.PY[i] = gameStateInfo.demand[i];
     if (gameStateInfo.PY[i] <= 0) { //up against wall
       gameStateInfo.PY[i] = 0;
-      gameStateInfo.PVY[i] = 0;
     } else if (gameStateInfo.PY[i] >= PANEL_HEIGHT - PADDLE_HEIGHT ) { //up against wall
       gameStateInfo.PY[i] = PANEL_HEIGHT - PADDLE_HEIGHT;
-      gameStateInfo.PVY[i] = 0;
     }
   }
-  //STEP 3: Calculate the new ball position
+  
   for (int i = 0; i < BALL_TAIL_SIZE - 1; i++) {
     gameStateInfo.BX[i] = gameStateInfo.BX[i+1];
     gameStateInfo.BY[i] = gameStateInfo.BY[i+1];
@@ -127,25 +98,37 @@ void pong__updateGameStateInfo() {
     gameStateInfo.BVY *= -1;
     gameStateInfo.BY[BALL_TAIL_SIZE - 1] -= gameStateInfo.BY[BALL_TAIL_SIZE - 1] - (PANEL_HEIGHT - 4);
   }
-  
+
+  int yDiff;
   //check/correct for left and right paddle or game over
   for (int i = 0; i < 2; i++) {
     if (gameStateInfo.BX[BALL_TAIL_SIZE - 1] == i*(PANEL_WIDTH - 4)) { //on the side, do we collide with paddle?
       if ( gameStateInfo.BY[BALL_TAIL_SIZE - 1] >= gameStateInfo.PY[i] - 3 && gameStateInfo.BY[BALL_TAIL_SIZE - 1] <= gameStateInfo.PY[i] + PADDLE_HEIGHT - 1) {
         gameStateInfo.BVX *= -1; //flip the direction
         gameStateInfo.BVY += gameStateInfo.PVY[i]; //add the paddle's velocity
+        yDiff = gameStateInfo.BY[BALL_TAIL_SIZE - 1] - gameStateInfo.PY[i] - (PADDLE_HEIGHT/2 - 2);
+        if (yDiff < -1) { //add velocity based on paddle position relative to ball
+          gameStateInfo.BVY += yDiff + 1;
+        } else if (yDiff > 1) {
+          gameStateInfo.BVY += yDiff - 1;
+        }
         gameStateInfo.BX[BALL_TAIL_SIZE - 1] += 2*gameStateInfo.BVX; //visually the collision happened last round
       } else {
         gameStateInfo.gameOver = 1;
       }
     }
   }
+  if (gameStateInfo.BVY > MAX_BALL_SPEED) {
+    gameStateInfo.BVY = MAX_BALL_SPEED;
+  } else if (gameStateInfo.BVY < -MAX_BALL_SPEED) {
+    gameStateInfo.BVY = -MAX_BALL_SPEED;
+  }
 }
 void pong__updateFrame() {
   //WRITE_OUT("pong__updateFrame\n");
   if (gameStateInfo.gameOver > 0) {
     gameStateInfo.gameOver++;
-    if (gameStateInfo.gameOver > 30*5) { //start a new game
+    if (gameStateInfo.gameOver > 30*4) { //start a new game
       pong__beginGame();
       neoPixFrameBuffer.ClearTo(OffColor);
     }
@@ -163,11 +146,11 @@ void pong__setup(AsyncWebServer* server) {
 void pong__beginGame() {
   gameStateInfo.gameOver = 0;
   for (int pnum = 0; pnum < 2; pnum++) {
-    gameStateInfo.demand[pnum] = 0; //start out with no position demand
-    gameStateInfo.PY[pnum] = PANEL_HEIGHT/2 - PADDLE_HEIGHT/2;
+    gameStateInfo.demand[pnum] = PANEL_HEIGHT/2 - PADDLE_HEIGHT/2; //start out in the center
+    gameStateInfo.PY[pnum] = gameStateInfo.demand[pnum];
     gameStateInfo.PVY[pnum] = 0;
   }
-  gameStateInfo.BVX = random(1)*2-1;
+  gameStateInfo.BVX = random(0, 2)*2 - 1;
   gameStateInfo.BVY = 0;
   for (int i = 0; i < BALL_TAIL_SIZE; i++) {
     gameStateInfo.BX[i] = PANEL_WIDTH/2 - 2;

@@ -7,7 +7,41 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 <style>
-html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
+html,body,h1,h2,h3,h4,h5 {
+  font-family: "Raleway", sans-serif;
+  text-align:center;
+}
+
+.slider {
+  -webkit-appearance: none;
+  width: 100%;
+  background: #d3d3d3;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+}
+
+.slider:hover {
+  opacity: 1;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 17%;
+  height: 100px;
+  background: #4CAF50;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 25px;
+  height: 100px;
+  background: #4CAF50;
+  cursor: pointer;
+}
+
 </style>
 <body class="w3-light-grey">
 
@@ -40,7 +74,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 <!-- !PAGE CONTENT! -->
 <div class="w3-main" style="margin-left:300px;margin-top:43px;">
 
-  <form class="w3-container w3-card-4" id="playerForm">
+  <form class="w3-container" id="playerForm">
     <h2>Player Selection</h2>
     <p>
     <input class="w3-radio" type="radio" name="player" value="0">
@@ -52,12 +86,13 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
     <input class="w3-radio" type="radio" name="player" value="-1" checked>
     <label>Observer</label></p>
   </form>
-
-  <div class="w3-container">
-    <p><button class="w3-button w3-block w3-jumbo w3-padding-large w3-blue" onmousedown="sendMessage(-1)" ontouchstart="sendMessage(-1)" onmouseup="sendMessage(0)" ontouchend="sendMessage(0)" id="upButton" disabled>UP</button></p>
-    <p><button class="w3-button w3-block w3-jumbo w3-padding-large w3-blue" onmousedown="sendMessage(1)" ontouchstart="sendMessage(1)" onmouseup="sendMessage(0)" ontouchend="sendMessage(0)" id="downButton" disabled>DOWN</button></p>
-  </div>
   
+  <div class="w3-container">
+    <p>
+    <h2>Paddle Control</h2>
+    <p>
+    <input type="range" min="0" max="28" value="14" class="slider" id="paddle" disabled>
+  </div> 
   <!-- Footer -->
   <footer class="w3-container w3-padding-16 w3-light-grey">
     <p>Source code for this project is available on <a href="https://github.com/figericnewton/LEDimageServer" target="_blank">my github page</a>.</p>
@@ -91,9 +126,7 @@ function w3_close() {
   navBarOverlay.style.display = "none";
 }
 
-
-var upButton = document.getElementById("upButton");
-var downButton = document.getElementById("downButton");
+var paddleControl = document.getElementById("paddle");
 var playerRadioButtons = document.forms['playerForm'].elements['player'];
 var currentPlayer;
 
@@ -102,14 +135,15 @@ for (var i=0; i<playerRadioButtons.length; i++) {
     currentPlayer = parseInt(this.value);
     console.log("Current player switched to " + currentPlayer);
     if (currentPlayer == -1) { //observer selected
-      upButton.disabled = true;
-      downButton.disabled = true;
+      paddleControl.disabled = true;
     } else {
-      upButton.disabled = false;
-      downButton.disabled = false;
+      paddleControl.disabled = false;
     }
   };
 }
+paddleControl.oninput = function() {
+  sendMessage(this.value);
+};
 
 //Note for the future that I can actually use disabled to eliminate player options if desired
 var socket = new WebSocket("ws://192.168.1.11/pong");
@@ -125,28 +159,6 @@ function sendMessage(demand) {
     demand: demand
   }));
 }
-<!-- upButton.onmousedown = "" -->
- <!-- function() { -->
-  <!-- sendMessage(-1); -->
-<!-- } -->
-<!-- upButton.onmouseup = function() { -->
-  <!-- socket.send(JSON.stringify({ -->
-    <!-- player: currentPlayer, -->
-    <!-- demand: 0 -->
-  <!-- })); -->
-<!-- } -->
-<!-- downButton.onmousedown = function() { -->
-  <!-- socket.send(JSON.stringify({ -->
-    <!-- player: currentPlayer, -->
-    <!-- demand: 1 -->
-  <!-- })); -->
-<!-- } -->
-<!-- downButton.onmouseup = function() { -->
-  <!-- socket.send(JSON.stringify({ -->
-    <!-- player: currentPlayer, -->
-    <!-- demand: 0 -->
-  <!-- })); -->
-<!-- } -->
 
 </script>
 
