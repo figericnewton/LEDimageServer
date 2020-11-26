@@ -11,6 +11,10 @@ html,body,h1,h2,h3,h4,h5 {
   font-family: "Raleway", sans-serif;
   text-align:center;
 }
+canvas {
+  width:100%;
+  image-rendering:pixelated;
+}
 </style>
 <body class="w3-light-grey">
 
@@ -54,7 +58,7 @@ html,body,h1,h2,h3,h4,h5 {
     <p>
   </form>
   <div class="w3-container">
-    <canvas id="Canvas" width="72" height="36" style="width:100%"></canvas>
+    <canvas id="Canvas" width="72" height="36"></canvas>
   </div>
   <div hidden class="w3-container">
     <video autoplay="true" id="SourceVideo"></video>
@@ -123,7 +127,19 @@ for (var i=0; i<radioButtons.length; i++) {
   };
 }
 
-var socket = new WebSocket("ws://192.168.1.11/video");
+function sendCurrentImage() {
+  var imgData = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height);
+  var imgPixels = imgData.data;
+  var response = new Uint8Array(3*canvas.width*canvas.height);
+  for (var i = 0; i < response.length; i++) {
+    response[3*i+0] = gamTable[imgPixels[4*i+1]]; //GREEN
+    response[3*i+1] = gamTable[imgPixels[4*i+0]]; //RED
+    response[3*i+2] = gamTable[imgPixels[4*i+2]]; //BLUE
+  }
+  socket.send(response);
+}
+
+var socket = new WebSocket("ws://192.168.1.11/stream");
 socket.binaryType = 'arraybuffer';
 socket.onopen = function(event) {
   console.log("Connection established");
@@ -145,18 +161,11 @@ socket.onmessage = function(message) {
     canvas.getContext("2d").putImageData(imgData, 0, 0);
   }
   recvmodeLastMsg = recvmode;
-  var response;
   if (recvmode) {
-    response = new Uint8Array(1);
+    socket.send(new Uint8Array(1));
   } else { //send the server data
-    response = new Uint8Array(3*canvas.width*canvas.height);
-    for (var i = 0; i < response.length; i++) {
-      response[3*i+0] = gamTable[imgPixels[4*i+1]]; //GREEN
-      response[3*i+1] = gamTable[imgPixels[4*i+0]]; //RED
-      response[3*i+2] = gamTable[imgPixels[4*i+2]]; //BLUE
-    }
+    sendCurrentImage();
   }
-  socket.send(response);
 };
 
 function drawFrame() {

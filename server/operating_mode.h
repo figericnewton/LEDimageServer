@@ -17,6 +17,5 @@ typedef struct OperatingMode_t {
 extern OperatingMode *CurrentOperatingMode;
 
 void setupAllOperatingModes(AsyncWebServer* server);
-//void setCurrentOperatingMode(OperatingMode newMode);
 
 #endif

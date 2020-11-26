@@ -15,50 +15,6 @@ canvas {
   width:100%;
   image-rendering:pixelated;
 }
-
-.slider-red, .slider-green, .slider-blue {
-  -webkit-appearance: none;
-  width: 100%;
-  background: #d3d3d3;
-  outline: none;
-  opacity: 0.7;
-  -webkit-transition: .2s;
-  transition: opacity .2s;
-}
-.slider-red::-webkit-slider-thumb, .slider-green::-webkit-slider-thumb, .slider-blue::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 50px;
-  height: 50px;
-  cursor: pointer;
-}
-.slider-red::-moz-range-thumb, .slider-green::-moz-range-thumb, .slider-blue::-moz-range-thumb {
-  width: 50px;
-  height: 50px;
-  cursor: pointer;
-}
-.slider-red:hover, .slider-green:hover, .slider-blue:hover {
-  opacity: 1;
-}
-.slider-red::-webkit-slider-thumb {
-  background: red;
-}
-.slider-red::-moz-range-thumb {
-  background: red;
-}
-.slider-green::-webkit-slider-thumb {
-  background: green;
-}
-.slider-green::-moz-range-thumb {
-  background: green;
-}
-.slider-blue::-webkit-slider-thumb {
-  background: blue;
-}
-.slider-blue::-moz-range-thumb {
-  background: blue;
-}
-
 </style>
 <body class="w3-light-grey">
 
@@ -74,13 +30,13 @@ canvas {
     <a href="#" class="w3-bar-item w3-button w3-padding-16 w3-hide-large w3-dark-grey w3-hover-black" onclick="w3_close()" title="close menu"><i class="fa fa-remove fa-fw"></i>  Close Menu</a>
     <a href="/home.html" class="w3-bar-item w3-button w3-padding"> Home</a>
     <a href="/action/off" class="w3-bar-item w3-button w3-padding"> Turn Display Off</a>
-    <a href="/text_display.html" class="w3-bar-item w3-button w3-padding w3-blue"> Display Text</a>
+    <!-- <a href="/text_display.html" class="w3-bar-item w3-button w3-padding"> Display Text</a> -->
     <!-- <a href="/select_image.html" class="w3-bar-item w3-button w3-padding"> Image Selection</a> -->
     <!-- <a href="/upload_image.html" class="w3-bar-item w3-button w3-padding"> Upload Image</a> -->
     <a href="/select_animation.html" class="w3-bar-item w3-button w3-padding"> Animation Selection</a>
     <!-- <a href="/upload_animation.html" class="w3-bar-item w3-button w3-padding"> Upload Animation</a> -->
     <a href="/pong.html" class="w3-bar-item w3-button w3-padding"> Pong Game</a>
-    <a href="/video_stream.html" class="w3-bar-item w3-button w3-padding"> Video Stream</a>
+    <a href="/video_stream.html" class="w3-bar-item w3-button w3-padding w3-blue"> Video Stream</a>
     <br><br>
   </div>
 </nav>
@@ -91,21 +47,12 @@ canvas {
 <!-- !PAGE CONTENT! -->
 <div class="w3-main" style="margin-left:300px;margin-top:43px;">
 
-  <div class="w3-container">
-    <h2>Enter text to send to the LED screen</h2>
-    <p>
-    <input class="w3-text" style="width:100%; text-align:center" type="text" id="userText">
-    <p>
+  <h2>Audio Vizualizer</h2>
+  <div class="w3-container" id="buttonContainer">
+    <p><button class="w3-button w3-block w3-xxlarge w3-padding-large w3-blue" onclick="begin()">Begin Vizualizer</button></p>
   </div>
   <div class="w3-container">
     <canvas id="Canvas" width="72" height="36"></canvas>
-  </div>
-  <div class="w3-container">
-    <h2>Change the text color!</h2>
-    <input type="range" class="slider-red" min="0" max="255" id="redSlide" value="0">
-    <input type="range" class="slider-green" min="0" max="255" id="greenSlide" value="0">
-    <input type="range" class="slider-blue" min="0" max="255" id="blueSlide" value="255">
-    <p>
   </div>
   
   <!-- Footer -->
@@ -160,38 +107,9 @@ var gamTable = [
     223, 225, 227, 229, 231, 233, 235, 238, 240, 242, 244, 246, 248, 251, 253, 255
 ];
 
+var buttonContainer = document.getElementById('buttonContainer');
 var canvas = document.getElementById('Canvas');
 var ctx = canvas.getContext("2d");
-ctx['imageSmoothingEnabled'] = false;
-ctx['mozImageSmoothingEnabled'] = false;
-ctx['oImageSmoothingEnabled'] = false;
-ctx['webkitImageSmoothingEnabled'] = false;
-ctx['msImageSmoothingEnabled'] = false;
-var textInput = document.getElementById('userText');
-var redSlide = document.getElementById('redSlide');
-var greenSlide = document.getElementById('greenSlide');
-var blueSlide = document.getElementById('blueSlide');
-var textToDisplay = "";
-var offsetCounter = 0;
-textInput.oninput = function() {
-  if (!this.value.startsWith(textToDisplay) || textToDisplay == "") {
-    offsetCounter = 0;
-  }
-  textToDisplay = this.value
-}
-//each letter is ~10px wide
-window.setInterval( function() {
-  ctx.fillStyle = "black";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.font = "20px monospace";
-  ctx.textAlign = "left";
-  ctx.fillStyle = 'rgb(' + redSlide.value + ', ' + greenSlide.value + ', ' + blueSlide.value + ')';
-  ctx.fillText(textToDisplay, canvas.width - offsetCounter, canvas.height*3/4);
-  offsetCounter++;
-  if (offsetCounter > canvas.width + 10*textToDisplay.length) {
-    offsetCounter = 0;
-  }
-}, 50);
 
 function sendCurrentImage() {
   var imgData = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height);
@@ -206,14 +124,66 @@ function sendCurrentImage() {
 }
 
 var socket = new WebSocket("ws://192.168.1.11/stream");
+socket.binaryType = 'arraybuffer';
 socket.onopen = function(event) {
   console.log("Connection established");
   sendCurrentImage();
 }
-socket.binaryType = 'arraybuffer';
 socket.onmessage = function(message) {
   sendCurrentImage();
 };
+
+let audioCTX, src, analyzer, bufferLength, dataArray;
+
+function log10 (num) {
+  return Math.log(num) / Math.LN10;
+}
+function updateFrame() {
+  var WIDTH = canvas.width;
+  var HEIGHT = canvas.height;
+  ctx.fillStyle = 'black';
+  ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+  analyzer.getFloatFrequencyData(dataArray);
+
+  let widthScale = WIDTH / 2.5
+  for (let i = 0; i < bufferLength; i++) {
+    // let freq = i*acx.sampleRate/analyzer.fftSize
+    let x = Math.floor(log10((i + 2) / 2) * widthScale | 0)
+    let dw = Math.ceil(log10((i + 3) / 2) * widthScale - log10((i + 2) / 2) * widthScale);
+
+    let magnitude = Math.min(Math.max((dataArray[i] - analyzer.minDecibels) / 95, 0), 1);
+
+    ctx.fillStyle = 'hsl(' + (Math.floor((i / dataArray.length) * 20) + 35) + ', 100%, ' + Math.max(magnitude * 100 + 0, 0) + '%)';
+    ctx.fillRect(x, HEIGHT, dw, -magnitude * HEIGHT | 0);
+    // PR hue: 38
+  }
+  setTimeout(function () {
+    updateFrame();
+  }, 20);
+}
+
+function begin() {
+  buttonContainer.hidden = true;
+  console.log("hello world");
+  audioCTX = new AudioContext();
+  analyzer = audioCTX.createAnalyser();
+  analyzer.fftSize = 2048;
+  analyzer.smoothingTimeConstant = 0.6;
+  bufferLength = analyzer.frequencyBinCount;
+  dataArray = new Float32Array(bufferLength);
+
+  if (navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({video: false, audio: true})
+      .then(function (stream) {
+        var source = audioCTX.createMediaStreamSource(stream);
+        source.connect(analyzer);
+        console.log("hello world 2");
+        updateFrame();
+      })
+      .catch(console.error);
+  }
+}
 
 </script>
 

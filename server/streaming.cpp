@@ -4,28 +4,29 @@
 
 #include "globals.h"
 
-void video__setup(AsyncWebServer* server);
-void video__processRequest(AsyncWebServerRequest* request);
-void video__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
-void video__updateFrame();
+void stream__setup(AsyncWebServer* server);
+void stream__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
+void stream__updateFrame();
 
-OperatingMode VideoOperatingMode = {
-  .setup = video__setup,
+OperatingMode StreamOperatingMode = {
+  .setup = stream__setup,
   { .prevPath = "/web/res/displayOff.png" }, //FIXME: need to generate a preview image?
-  .updateFrame = video__updateFrame,
+  .updateFrame = stream__updateFrame,
 };
 
-AsyncWebSocket video__ws("/video");
+AsyncWebSocket stream__ws("/stream");
 
-void video__updateFrame() {
-  video__ws.cleanupClients(1); //ONLY ONE CLIENT AT A TIME CAN STREAM!!!
+void stream__updateFrame() {
+  stream__ws.cleanupClients(1); //ONLY ONE CLIENT AT A TIME CAN STREAM!!!
 }
-void video__setup(AsyncWebServer* server) {
-  video__ws.onEvent(video__wsEvent);
-  server->addHandler(&video__ws);
+void stream__setup(AsyncWebServer* server) {
+  stream__ws.onEvent(stream__wsEvent);
+  server->addHandler(&stream__ws);
   server->serveStatic("/video_stream.html", SDFS, "/web/video_stream.html");
+  server->serveStatic("/audio_visualizer.html", SDFS, "/web/audio_visualizer.html");
+  server->serveStatic("/text_display.html", SDFS, "/web/text_display.html");
 }
-void video__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
+void stream__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
   if (type == WS_EVT_CONNECT) {
     WRITE_OUT("ws[");
     WRITE_OUT(server->url());
@@ -41,8 +42,8 @@ void video__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsE
   } else if (type == WS_EVT_DATA) {
     AwsFrameInfo * info = (AwsFrameInfo*)arg;
     if (info->len == frameBufferCTX.SizePixels) { //client is sending us the video data
-      if ( CurrentOperatingMode != &VideoOperatingMode ) {
-        CurrentOperatingMode = &VideoOperatingMode;
+      if ( CurrentOperatingMode != &StreamOperatingMode ) {
+        CurrentOperatingMode = &StreamOperatingMode;
       }
       WRITE_OUT("RECEIVED (");
       WRITE_OUT((const int)(info->index + len));
