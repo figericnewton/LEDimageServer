@@ -25,6 +25,7 @@ void stream__setup(AsyncWebServer* server) {
   server->serveStatic("/video_stream.html", SDFS, "/web/video_stream.html");
   server->serveStatic("/audio_visualizer.html", SDFS, "/web/audio_visualizer.html");
   server->serveStatic("/text_display.html", SDFS, "/web/text_display.html");
+  server->serveStatic("/drawing.html", SDFS, "/web/drawing.html");
 }
 void stream__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
   if (type == WS_EVT_CONNECT) {

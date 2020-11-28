@@ -58,6 +58,12 @@ canvas {
 .slider-blue::-moz-range-thumb {
   background: blue;
 }
+.dot {
+  height: 40px;
+  width: 40px;
+  border-radius: 50%;
+  display: inline-block;
+}
 
 </style>
 <body class="w3-light-grey">
@@ -74,8 +80,8 @@ canvas {
     <a href="#" class="w3-bar-item w3-button w3-padding-16 w3-hide-large w3-dark-grey w3-hover-black" onclick="w3_close()" title="close menu"><i class="fa fa-remove fa-fw"></i>  Close Menu</a>
     <a href="/home.html" class="w3-bar-item w3-button w3-padding"> Home</a>
     <a href="/action/off" class="w3-bar-item w3-button w3-padding"> Turn Display Off</a>
-    <a href="/text_display.html" class="w3-bar-item w3-button w3-padding w3-blue"> Display Text</a>
-    <a href="/drawing.html" class="w3-bar-item w3-button w3-padding"> Drawing Mode</a>
+    <a href="/text_display.html" class="w3-bar-item w3-button w3-padding"> Display Text</a>
+    <a href="/drawing.html" class="w3-bar-item w3-button w3-padding w3-blue"> Drawing Mode</a>
     <a href="/select_animation.html" class="w3-bar-item w3-button w3-padding"> Animation Selection</a>
     <a href="/pong.html" class="w3-bar-item w3-button w3-padding"> Pong Game</a>
     <p>
@@ -93,20 +99,27 @@ canvas {
 <div class="w3-main" style="margin-left:300px;margin-top:43px;">
 
   <div class="w3-container">
-    <h2>Enter text to send to the LED screen</h2>
     <p>
-    <input class="w3-text" style="width:100%; text-align:center" type="text" id="userText">
+    <div class="w3-row">
+      <div class="w3-col s4">
+        <button class="w3-button w3-medium w3-blue" onclick="configurePen(this)">Configure Pen</button>
+      </div>
+      <div class="w3-col s4">
+        <span id="penPreview" class="dot"></span>
+      </div>
+      <div class="w3-col s4">
+        <button class="w3-button w3-medium w3-blue" onclick="clearCanvas()">Clear Drawing</button>
+      </div>
+    </div>
+    <p>
+    <!-- <h4 id="penText">(select the pen color then start drawing on the canvas)</h4> -->
+    <input hidden type="range" class="slider-red" min="0" max="255" id="redSlide" value="0">
+    <input hidden type="range" class="slider-green" min="0" max="255" id="greenSlide" value="0">
+    <input hidden type="range" class="slider-blue" min="0" max="255" id="blueSlide" value="255">
     <p>
   </div>
   <div class="w3-container">
     <canvas id="Canvas" width="72" height="36"></canvas>
-  </div>
-  <div class="w3-container">
-    <h2>Change the text color!</h2>
-    <input type="range" class="slider-red" min="0" max="255" id="redSlide" value="0">
-    <input type="range" class="slider-green" min="0" max="255" id="greenSlide" value="0">
-    <input type="range" class="slider-blue" min="0" max="255" id="blueSlide" value="255">
-    <p>
   </div>
   
   <!-- Footer -->
@@ -168,31 +181,132 @@ ctx['mozImageSmoothingEnabled'] = false;
 ctx['oImageSmoothingEnabled'] = false;
 ctx['webkitImageSmoothingEnabled'] = false;
 ctx['msImageSmoothingEnabled'] = false;
-var textInput = document.getElementById('userText');
+var penPreview = document.getElementById('penPreview');
 var redSlide = document.getElementById('redSlide');
 var greenSlide = document.getElementById('greenSlide');
 var blueSlide = document.getElementById('blueSlide');
-var textToDisplay = "";
-var offsetCounter = 0;
-textInput.oninput = function() {
-  if (!this.value.startsWith(textToDisplay) || textToDisplay == "") {
-    offsetCounter = 0;
+var penColor;
+var configuringPen = false;
+
+function configurePen(obj) {
+  redSlide.hidden = configuringPen;
+  greenSlide.hidden = configuringPen;
+  blueSlide.hidden = configuringPen;
+  configuringPen = !configuringPen;
+  if (configuringPen) {
+    obj.innerHTML = "Close Pen Configuration";
+  } else {
+    obj.innerHTML = "Configure Pen";
   }
-  textToDisplay = this.value
 }
-//each letter is ~10px wide
-window.setInterval( function() {
+
+function updatePenColor() {
+  penColor = 'rgb(' + redSlide.value + ', ' + greenSlide.value + ', ' + blueSlide.value + ')';
+  penPreview.style.backgroundColor = penColor;
+  console.log(penColor);
+}
+updatePenColor();
+redSlide.addEventListener("input", updatePenColor);
+greenSlide.addEventListener("input", updatePenColor);
+blueSlide.addEventListener("input", updatePenColor);
+
+function clearCanvas() {
   ctx.fillStyle = "black";
   ctx.fillRect(0,0,canvas.width,canvas.height);
-  ctx.font = "20px monospace";
-  ctx.textAlign = "left";
-  ctx.fillStyle = 'rgb(' + redSlide.value + ', ' + greenSlide.value + ', ' + blueSlide.value + ')';
-  ctx.fillText(textToDisplay, canvas.width - offsetCounter, canvas.height*3/4);
-  offsetCounter++;
-  if (offsetCounter > canvas.width + 10*textToDisplay.length) {
-    offsetCounter = 0;
+}
+clearCanvas();
+
+canvas.addEventListener("mousemove",   function (e) { mouseDraw('move', e); }, false);
+canvas.addEventListener("mousedown",   function (e) { mouseDraw('down', e); }, false);
+canvas.addEventListener("mouseup",     function (e) { mouseDraw('up', e); }, false);
+canvas.addEventListener("mouseout",    function (e) { mouseDraw('out', e); }, false);
+
+canvas.addEventListener("touchmove",   function (e) { touchDraw('move', e); }, false);
+canvas.addEventListener("touchstart",  function (e) { touchDraw('down', e); }, false);
+canvas.addEventListener("touchend",    function (e) { touchDraw('up', e); }, false);
+canvas.addEventListener("touchcancel", function (e) { touchDraw('out', e); }, false);
+
+var xPrev, yPrev;
+var mouseDown = false;
+
+function mouseDraw(action, e) {
+  var xPos = (e.clientX - canvas.offsetLeft)*72/canvas.offsetWidth;
+  var yPos = (e.clientY - canvas.offsetTop)*36/canvas.offsetHeight;
+  if (action == 'down') {
+    mouseDown = true;
+  } else if (action == 'up' || action == 'out') {
+    if (mouseDown) {
+      ctx.beginPath();
+      ctx.fillStyle = penColor;
+      ctx.fillRect(xPos, yPos, 1, 1);
+      ctx.closePath();
+      mouseDown = false;
+    }
+  } else if (action == 'move') {
+    if (mouseDown) {
+      ctx.beginPath();
+      ctx.moveTo(xPrev, yPrev);
+      ctx.lineTo(xPos, yPos);
+      ctx.strokeStyle = penColor;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.closePath();
+    }
   }
-}, 50);
+  xPrev = xPos;
+  yPrev = yPos;
+}
+
+var trackedTouches = new Object();
+
+function touchDraw(action, e) {
+  e.preventDefault();
+  var touches = e.changedTouches;
+  console.log("touchDraw has been called!");
+  console.log("touches[0].pageX: " + touches[0].pageX);
+  console.log("touches[0].pageY: " + touches[0].pageY);
+  if (action == 'down') {
+    for (var i = 0; i < touches.length; i++) {
+      trackedTouches[touches[i].identifier] = {
+        'xPrev' : (touches[i].pageX - canvas.offsetLeft)*72/canvas.offsetWidth,
+        'yPrev' : (touches[i].pageY - canvas.offsetTop)*36/canvas.offsetHeight,
+      };
+    }
+  } else if (action == 'up' || action == 'out') {
+    for (var i = 0; i < touches.length; i++) {
+      if (touches[i].identifier in trackedTouches) {
+        ctx.beginPath();
+        ctx.moveTo(trackedTouches[touches[i].identifier].xPrev, trackedTouches[touches[i].identifier].yPrev);
+        trackedTouches[touches[i].identifier].xPrev = (touches[i].pageX - canvas.offsetLeft)*72/canvas.offsetWidth;
+        trackedTouches[touches[i].identifier].yPrev = (touches[i].pageY - canvas.offsetTop)*36/canvas.offsetHeight;
+        ctx.lineTo(trackedTouches[touches[i].identifier].xPrev, trackedTouches[touches[i].identifier].yPrev);
+        ctx.strokeStyle = penColor;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.closePath();
+        delete trackedTouches[touches[i].identifier];
+      } else {
+        console.log("couldn't find the touch: " + touches[i].identifier);
+      }
+    }
+  } else if (action == 'move') {
+    for (var i = 0; i < touches.length; i++) {
+      if (touches[i].identifier in trackedTouches) {
+        ctx.beginPath();
+        ctx.moveTo(trackedTouches[touches[i].identifier].xPrev, trackedTouches[touches[i].identifier].yPrev);
+        trackedTouches[touches[i].identifier].xPrev = (touches[i].pageX - canvas.offsetLeft)*72/canvas.offsetWidth;
+        trackedTouches[touches[i].identifier].yPrev = (touches[i].pageY - canvas.offsetTop)*36/canvas.offsetHeight;
+        ctx.lineTo(trackedTouches[touches[i].identifier].xPrev, trackedTouches[touches[i].identifier].yPrev);
+        ctx.strokeStyle = penColor;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.closePath();
+      } else {
+        console.log("couldn't find the touch: " + touches[i].identifier);
+      }
+    }
+  }
+}
 
 function sendCurrentImage() {
   var imgData = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height);
