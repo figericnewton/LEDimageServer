@@ -36,9 +36,6 @@ AsyncWebServer* setupWebInterface() {
   WRITE_OUT(WiFi.localIP());
   WRITE_OUT("\n");
 
-  //ws.onEvent(onWsEvent);
-  //server.addHandler(&ws);
-  
   server.rewrite("/", "/home.html");
   setupAllOperatingModes(&server);
   server
