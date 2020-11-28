@@ -1,6 +1,6 @@
 
-#ifndef PONG_CPP
-#define PONG_CPP
+#ifndef STREAMING_CPP
+#define STREAMING_CPP
 
 #include "globals.h"
 
