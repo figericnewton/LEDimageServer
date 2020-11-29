@@ -9,7 +9,6 @@
 #define MAX_BALL_SPEED 3
 
 void pong__setup(AsyncWebServer* server);
-void pong__processRequest(AsyncWebServerRequest* request);
 void pong__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len);
 void pong__updateFrame();
 void pong__beginGame();
@@ -161,35 +160,20 @@ void pong__beginGame() {
 
 void pong__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
   if (type == WS_EVT_CONNECT) {
-    WRITE_OUT("ws[");
-    WRITE_OUT(server->url());
-    WRITE_OUT("][");
-    WRITE_OUT(client->id());
-    WRITE_OUT("] connect\n");
+    WRITE_OUT("ws[%s][%u] connect\n", server->url(), client->id());
     if (CurrentOperatingMode != &PongOperatingMode) {
       pong__beginGame();
       CurrentOperatingMode = &PongOperatingMode;
     }
   } else if(type == WS_EVT_DISCONNECT) {
-    WRITE_OUT("ws[");
-    WRITE_OUT(server->url());
-    WRITE_OUT("][");
-    WRITE_OUT(client->id());
-    WRITE_OUT("] disconnect\n");
+    WRITE_OUT("ws[%s][%u] disconnect\n", server->url(), client->id());
   } else if (type == WS_EVT_DATA) {
     AwsFrameInfo * info = (AwsFrameInfo*)arg;
     StaticJsonDocument<256> msgJSON;
     if (info->final && info->index == 0 && info->len == len) {
       //the whole message is in a single frame and we got all of its data
-      WRITE_OUT("ws[");
-      WRITE_OUT(server->url());
-      WRITE_OUT("][");
-      WRITE_OUT(client->id());
-      WRITE_OUT("] received:\n");
-      for(size_t i=0; i < info->len; i++) {
-        WRITE_OUT((char) data[i]);
-      }
-      WRITE_OUT("\n");
+      WRITE_OUT("ws[%s][%u] received:\n", server->url(), client->id());
+      WRITE_OUT("%.*s\n", info->len, (char *)data);
       if (deserializeJson(msgJSON, data)) {
         WRITE_OUT("Failed to deserialize client message!\n");
         return;
@@ -197,11 +181,7 @@ void pong__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEv
       gameStateInfo.demand[msgJSON["player"].as<int>()] = msgJSON["demand"].as<int>();
     }
   } else {
-    WRITE_OUT("ws[");
-    WRITE_OUT(server->url());
-    WRITE_OUT("][");
-    WRITE_OUT(client->id());
-    WRITE_OUT("] unhandled event type (ignored)\n");
+    WRITE_OUT("ws[%s][%u] unhandled event type (ignored)\n", server->url(), client->id());
   }
 }
 #endif

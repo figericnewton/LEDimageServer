@@ -28,7 +28,6 @@ void anim__setup(AsyncWebServer* server) {
     .setCacheControl("max-age=30");
 }
 void anim__updateFrame() {
-  //WRITE_OUT("anim__updateFrame\n");
   if (!animInfo.videoData.available()) { //reached end of file
     animInfo.videoData.seek(0); //bring back to the beginning
   }
