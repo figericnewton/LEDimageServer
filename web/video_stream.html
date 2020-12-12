@@ -51,11 +51,14 @@ canvas {
   <form class="w3-container" id="recvForm">
     <h2>Video Streaming Selection</h2>
     <p>
-    <input class="w3-radio" type="radio" name="recvmode" value="1" checked>
+    <input class="w3-radio" type="radio" name="mode" value="recv" checked>
     <label>Receive live feed of LED server</label></p>
     <p>
-    <input class="w3-radio" type="radio" name="recvmode" value="0">
-    <label>Send video stream to the LED display</label></p>
+    <input class="w3-radio" type="radio" name="mode" value="sendVideo">
+    <label>Send video camera to the LED display</label></p>
+    <p>
+    <input class="w3-radio" type="radio" name="mode" value="sendScreen">
+    <label>Share screen to the LED display</label></p>
     <p>
   </form>
   <div class="w3-container">
@@ -119,12 +122,31 @@ var gamTable = [
 
 var canvas = document.getElementById('Canvas');
 var video = document.getElementById('SourceVideo');
-var radioButtons = document.forms['recvForm'].elements['recvmode'];
+var radioButtons = document.forms['recvForm'].elements['mode'];
 var recvmode = true, recvmodeLastMsg = true;
 for (var i=0; i<radioButtons.length; i++) {
   radioButtons[i].onchange = function() {
-    recvmode = this.value == "1";
-    console.log("recvmode switched to " + recvmode);
+    if (this.value == "0") {
+      recvmode = true;
+      video.srcObject = '';
+    } else if (this.value == "sendVideo") {
+      recvmode = false;
+      if (navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({video: true, audio: false})
+          .then(function (stream) {
+            video.srcObject = stream;
+          })
+          .catch(console.error);
+      }
+    } else if (this.value == "sendScreen") {
+      recvmode = false;
+      navigator.mediaDevices.getDisplayMedia({video: true, audio: false})
+        .then(function (stream) {
+          video.srcObject = stream;
+        })
+        .catch(console.error);
+    }
+    console.log("mode changed to " + this.value);
   };
 }
 
@@ -170,6 +192,7 @@ socket.onmessage = function(message) {
 };
 
 function drawFrame() {
+  //drawVisual = requestAnimationFrame(drawFrame);
   if (!recvmode) { //don't copy video to canvas when we're in receive mode
     canvas.getContext("2d").drawImage(video, 0, 0, video.videoWidth, video.videoHeight,
                                              0, 0, canvas.width, canvas.height);
@@ -178,15 +201,7 @@ function drawFrame() {
     drawFrame(video);
   }, 10);
 }
-
 video.addEventListener('canplay', drawFrame);
-if (navigator.mediaDevices.getUserMedia) {
-  navigator.mediaDevices.getUserMedia({video: true, audio: false})
-    .then(function (stream) {
-      video.srcObject = stream;
-    })
-    .catch(console.error);
-}
 
 </script>
 
