@@ -20,15 +20,11 @@
 #define DEBUGGING_H
 
 //uncomment as desired when debugging
-#define DEBUG
+#define DEBUG false
 //#define DEBUG_TIMER_ENABLED
 //#define DEBUG_MEMORY_ENABLED
 
-#ifdef DEBUG
-  #define WRITE_OUT(...) Serial.printf(__VA_ARGS__)
-#else
-  #define WRITE_OUT(...)  
-#endif
+#define WRITE_OUT(...) do { if (DEBUG) Serial.printf(__VA_ARGS__); } while (0)
 
 #ifdef DEBUG_TIMER_ENABLED
   void startTimer();

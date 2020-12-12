@@ -45,19 +45,16 @@ void stream__setup(AsyncWebServer* server) {
   server->serveStatic("/drawing.html", SDFS, "/web/drawing.html");
 }
 void stream__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len){
-  if (type == WS_EVT_CONNECT) {
-    WRITE_OUT("ws[%s][%u] connect\n", server->url(), client->id());
-  } else if(type == WS_EVT_DISCONNECT) {
-    WRITE_OUT("ws[%s][%u] disconnect\n", server->url(), client->id());
-  } else if (type == WS_EVT_DATA) {
+  if (type == WS_EVT_DATA) {
     AwsFrameInfo * info = (AwsFrameInfo*)arg;
     if (info->len == frameBufferCTX.SizePixels) { //client is sending us the video data
       if ( CurrentOperatingMode != &StreamOperatingMode ) {
         CurrentOperatingMode = &StreamOperatingMode;
       }
-      WRITE_OUT("RECEIVED (%u/%u)\n", (info->index + len), info->len);
+      WRITE_OUT("RECEIVED (%u/", info->index + len);
+      WRITE_OUT("%u)\n", info->len);
       memcpy(&frameBufferCTX.Pixels[info->index], data, len);
-      if (info->index + len == info->len) {
+      if ((info->index + len) == info->len) {
         WRITE_OUT("requesting more data\n");
         client->binary("OK"); //request the next frame!
       }
@@ -65,8 +62,6 @@ void stream__wsEvent(AsyncWebSocket * server, AsyncWebSocketClient * client, Aws
       WRITE_OUT("SENDING TO CLIENT\n");
       client->binary(frameBufferCTX.Pixels, frameBufferCTX.SizePixels);
     }
-  } else {
-    WRITE_OUT("ws[%s][%u] unhandled event type (ignored)\n", server->url(), client->id());
   }
 }
 #endif

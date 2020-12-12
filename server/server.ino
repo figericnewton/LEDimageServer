@@ -28,7 +28,7 @@ const RgbColor Blue(0, 0, 120);
 
 NeoPixelBus<NeoGrbFeature, NeoEsp8266Dma800KbpsMethod> topPixels(PANEL_WIDTH * PANEL_HEIGHT/3); //uses GPIO3
 NeoPixelBus<NeoGrbFeature, NeoEsp8266AsyncUart1800KbpsMethod> midPixels(PANEL_WIDTH * PANEL_HEIGHT/3); //uses GPIO2
-#ifndef DEBUG
+#if !DEBUG
 NeoPixelBus<NeoGrbFeature, NeoEsp8266AsyncUart0800KbpsMethod> botPixels(PANEL_WIDTH * PANEL_HEIGHT/3); //uses GPIO1 (which conflicts with serial monitoring)
 #endif
 
@@ -41,15 +41,14 @@ NeoBuffer<NeoBufferMethod<NeoGrbFeature>> neoPixFrameBuffer(PANEL_WIDTH, PANEL_H
 NeoBufferContext<NeoGrbFeature> frameBufferCTX = neoPixFrameBuffer;
 
 void setup() {
-#ifdef DEBUG
+#if DEBUG
   Serial.begin(74880);
   delay(10);
-#endif
-
-#ifndef DEBUG
+#else
   botPixels.Begin();
   delay(10);
 #endif
+
   topPixels.Begin();
   delay(10);
   midPixels.Begin();
@@ -65,7 +64,7 @@ void loop() {
   CurrentOperatingMode->updateFrame();
   neoPixFrameBuffer.Blt(topPixels, 0, 0, 0,                0, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
   neoPixFrameBuffer.Blt(midPixels, 0, 0, 0,   PANEL_HEIGHT/3, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
-#ifndef DEBUG
+#if !DEBUG
   neoPixFrameBuffer.Blt(botPixels, 0, 0, 0, 2*PANEL_HEIGHT/3, PANEL_WIDTH, PANEL_HEIGHT/3, MyLayoutMap);
 #endif
 
@@ -73,7 +72,7 @@ void loop() {
   topPixels.Show();
   midPixels.Show();
   //note Uart0800 (botPixels) is the same as Serial debug port, can't use both at the same time
-#ifndef DEBUG
+#if !DEBUG
   botPixels.Show();
 #endif
   stopTimer();

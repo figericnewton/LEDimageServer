@@ -1,5 +1,6 @@
 
 *.raw_grb
 *.db
-data/**
+data/*
 server/credentials.h
+web/ssl/*
