@@ -48,7 +48,7 @@ canvas {
 <!-- !PAGE CONTENT! -->
 <div class="w3-main" style="margin-left:300px;margin-top:43px;">
 
-  <h2>Audio Vizualizer</h2>
+  <h2>Audio Visualizer</h2>
   <div class="w3-container" id="buttonContainer">
     <p><button class="w3-button w3-block w3-xxlarge w3-padding-large w3-blue" onclick="begin()">Begin Vizualizer</button></p>
   </div>
@@ -113,7 +113,7 @@ var canvas = document.getElementById('Canvas');
 var ctx = canvas.getContext("2d");
 
 function sendCurrentImage() {
-  var imgData = canvas.getContext("2d").getImageData(0, 0, canvas.width, canvas.height);
+  var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   var imgPixels = imgData.data;
   var response = new Uint8Array(3*canvas.width*canvas.height);
   for (var i = 0; i < response.length; i++) {
@@ -134,43 +134,69 @@ socket.onmessage = function(message) {
   sendCurrentImage();
 };
 
-let audioCTX, src, analyzer, bufferLength, dataArray;
+var audioCTX, src, analyzer, bufferLength, dataArray;
 
-function log10 (num) {
-  return Math.log(num) / Math.LN10;
-}
+//use logarithmic frequencey scale for better visual effect
+var freqCutoffs = [ 100, 120, 141, 163, 186, 211, 236, 263, 291, 321, 352, 384, 418, 454, 492, 532,
+                    573, 617, 663, 711, 761, 814, 870, 929, 990, 1055, 1122, 1193, 1268, 1346, 1429,
+                    1515, 1606, 1701, 1801, 1906, 2017, 2133, 2254, 2382, 2516, 2657, 2805, 2960,
+                    3123, 3294, 3474, 3662, 3861, 4069, 4287, 4516, 4757, 5010, 5275, 5554, 5847,
+                    6154, 6477, 6816, 7172, 7545, 7938, 8349, 8782, 9236, 9713, 10213, 10739, 11291,
+                    11871, 12479 ];
 function updateFrame() {
+  drawVisual = requestAnimationFrame(updateFrame);
   var WIDTH = canvas.width;
   var HEIGHT = canvas.height;
   ctx.fillStyle = 'black';
   ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
+  
+  ctx.lineWidth = 1;
+  var gradient = ctx.createLinearGradient(WIDTH/2, 0, WIDTH/2, HEIGHT);
+  gradient.addColorStop(0, 'red');
+  gradient.addColorStop(0.5, 'blue');
+  gradient.addColorStop(1, 'red');
+  ctx.strokeStyle = gradient;
+  ctx.fillStyle = gradient;
+  
   analyzer.getFloatFrequencyData(dataArray);
-
-  let widthScale = WIDTH / 2.5
-  for (let i = 0; i < bufferLength; i++) {
-    // let freq = i*acx.sampleRate/analyzer.fftSize
-    let x = Math.floor(log10((i + 2) / 2) * widthScale | 0)
-    let dw = Math.ceil(log10((i + 3) / 2) * widthScale - log10((i + 2) / 2) * widthScale);
-
-    let magnitude = Math.min(Math.max((dataArray[i] - analyzer.minDecibels) / 95, 0), 1);
-
-    ctx.fillStyle = 'hsl(' + (Math.floor((i / dataArray.length) * 20) + 35) + ', 100%, ' + Math.max(magnitude * 100 + 0, 0) + '%)';
-    ctx.fillRect(x, HEIGHT, dw, -magnitude * HEIGHT | 0);
-    // PR hue: 38
+  var freqBucketSize = (audioCTX.sampleRate / 2)/bufferLength;
+  var freq = 0, magnitude, j = -1;
+  var topPath = new Path2D();
+  var botPath = new Path2D();
+  topPath.moveTo(0, HEIGHT/2);
+  for (var x = 0; x < freqCutoffs.length; x++) {
+    magnitude = 0;
+    while (freq < freqCutoffs[x]) {
+      j++;
+      freq = freqBucketSize*j;
+      magnitude += Math.pow(2, dataArray[j]);
+    }
+    magnitude = Math.log2(magnitude);
+    magnitude = Math.floor(0 + (magnitude - analyzer.minDecibels)*(HEIGHT/2. - 0)/(analyzer.maxDecibels - analyzer.minDecibels));
+    magnitude = Math.max(0, magnitude);
+    //console.log("magnitude: " + magnitude);
+    topPath.lineTo(x, HEIGHT/2 - magnitude);
+    botPath.lineTo(x, HEIGHT/2 + magnitude);
   }
-  setTimeout(function () {
-    updateFrame();
-  }, 20);
+  topPath.lineTo(WIDTH, HEIGHT/2);
+  botPath.lineTo(WIDTH, HEIGHT/2);
+  ctx.stroke(topPath);
+  //This creates an interesting reflection effect, but it doesn't look quite
+  //as good on the actual LED screen
+  //botPath.lineTo(0, HEIGHT/2);
+  //ctx.fillRect(0, HEIGHT/2, WIDTH, HEIGHT);
+  //ctx.strokeStyle = 'black'
+  ctx.stroke(botPath);
 }
 
 function begin() {
   buttonContainer.hidden = true;
-  console.log("hello world");
   audioCTX = new AudioContext();
+  audioCTX.sampleRate = 44100;
   analyzer = audioCTX.createAnalyser();
   analyzer.fftSize = 2048;
-  analyzer.smoothingTimeConstant = 0.6;
+  analyzer.smoothingTimeConstant = 0.7;
+  analyzer.minDecibels = -80;
   bufferLength = analyzer.frequencyBinCount;
   dataArray = new Float32Array(bufferLength);
 
@@ -179,7 +205,6 @@ function begin() {
       .then(function (stream) {
         var source = audioCTX.createMediaStreamSource(stream);
         source.connect(analyzer);
-        console.log("hello world 2");
         updateFrame();
       })
       .catch(console.error);
